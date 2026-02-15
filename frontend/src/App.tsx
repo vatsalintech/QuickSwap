@@ -1,9 +1,8 @@
+import React from "react";
+import LandingPage from "./components/landingPage/landing_page";
+
 function App() {
-  return (
-    <>
-      
-    </>
-  )
+  return <LandingPage />;
 }
 
-export default App
+export default App;
