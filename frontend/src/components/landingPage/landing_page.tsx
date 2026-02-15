@@ -51,8 +51,8 @@ const LandingPage = () => {
           <a href="#about">Why Quickswap</a>
         </nav>
         <div className="navbar-actions">
-          <button className="btn ghost">Sign in</button>
           <button className="btn primary">Start selling</button>
+          <button className="btn ghost">Sign in</button>
         </div>
       </header>
 
@@ -66,7 +66,9 @@ const LandingPage = () => {
             Turn slow chats into real‑time bidding wars.
           </h1>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+            Quickswap replaces endless price negotiations with a transparent,
+            time‑boxed auction engine. List once, set a window, and let buyers
+            compete in real time while the market discovers the true price.
           </p>
           <div className="hero-actions">
             <button className="btn primary">Launch a 15‑min auction</button>
@@ -120,19 +122,22 @@ const LandingPage = () => {
         <div className="feature">
           <h3>From days to minutes</h3>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.
+            Compress the entire sale lifecycle into a short auction window
+            instead of waiting on messages for days.
           </p>
         </div>
         <div className="feature">
           <h3>Real‑time bidding engine</h3>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.
+            Buyers place bids in a live, shared feed with instant updates and
+            clear price discovery.
           </p>
         </div>
         <div className="feature">
           <h3>No chat, no stress</h3>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore.
+            One listing, one auction — no "Is this available?" spam, no
+            low‑ball DMs, no coordination chaos.
           </p>
         </div>
       </section>
@@ -166,9 +171,12 @@ const LandingPage = () => {
       <section id="about" className="about">
         <div className="about-inner">
           <div>
-            <h2>Lorem ipsum dolor sit amet consectetur.</h2>
+            <h2>Bring auction‑grade efficiency to peer‑to‑peer selling.</h2>
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.
+              Quickswap is built for local marketplaces that want the clarity of
+              an order book, the speed of a flash sale, and the simplicity of
+              listing once and walking away. No extra commitments, just clean,
+              competitive bidding.
             </p>
           </div>
           <button className="btn primary">Join the early access</button>
