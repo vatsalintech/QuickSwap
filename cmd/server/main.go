@@ -33,7 +33,7 @@ func main() {
 	http.HandleFunc("/api/auth/logout", logoutHandler(authClient))
 	http.HandleFunc("/api/auth/me", meHandler(authClient))
 
-	addr := ":8080"
+	addr := ":8082"
 	log.Printf("QuickSwap auth server listening on %s", addr)
 	if err := http.ListenAndServe(addr, corsMiddleware(http.DefaultServeMux)); err != nil {
 		log.Fatal(err)

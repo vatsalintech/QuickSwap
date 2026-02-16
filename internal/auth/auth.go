@@ -51,6 +51,15 @@ type AuthResponse struct {
 	User    *User    `json:"user,omitempty"`
 	Error   string   `json:"error,omitempty"`
 	Msg     string   `json:"msg,omitempty"`
+
+	// Flat session fields that might be at the root level
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	ExpiresIn    int    `json:"expires_in,omitempty"`
+
+	// Common user fields that might be at the root level in some responses
+	ID    string `json:"id,omitempty"`
+	Email string `json:"email,omitempty"`
 }
 
 // Login authenticates a user with email and password.
@@ -93,6 +102,20 @@ func (c *Client) Login(email, password string) (*Session, error) {
 	}
 
 	if authResp.Session == nil {
+		// Check if we have flat session fields
+		if authResp.AccessToken != "" {
+			session := &Session{
+				AccessToken:  authResp.AccessToken,
+				RefreshToken: authResp.RefreshToken,
+				ExpiresIn:    authResp.ExpiresIn,
+			}
+			if authResp.User != nil {
+				session.User = *authResp.User
+			} else if authResp.ID != "" {
+				session.User = User{ID: authResp.ID, Email: authResp.Email}
+			}
+			return session, nil
+		}
 		return nil, fmt.Errorf("no session in response")
 	}
 
@@ -142,9 +165,29 @@ func (c *Client) Signup(email, password string) (*Session, error) {
 	if authResp.Session != nil {
 		return authResp.Session, nil
 	}
+
+	// Check for flat session fields
+	if authResp.AccessToken != "" {
+		session := &Session{
+			AccessToken:  authResp.AccessToken,
+			RefreshToken: authResp.RefreshToken,
+			ExpiresIn:    authResp.ExpiresIn,
+		}
+		if authResp.User != nil {
+			session.User = *authResp.User
+		} else if authResp.ID != "" {
+			session.User = User{ID: authResp.ID, Email: authResp.Email}
+		}
+		return session, nil
+	}
+
 	if authResp.User != nil {
-		// Email confirmation required - no session yet
+		// Email confirmation required or just user object returned - no session yet
 		return &Session{User: *authResp.User}, nil
+	}
+	if authResp.ID != "" {
+		// Handle root-level user object
+		return &Session{User: User{ID: authResp.ID, Email: authResp.Email}}, nil
 	}
 
 	return nil, fmt.Errorf("unexpected signup response")
