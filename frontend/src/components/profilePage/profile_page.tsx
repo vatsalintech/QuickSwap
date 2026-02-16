@@ -100,8 +100,8 @@ const ProfilePage = () => {
             </span>
           </div>
           <div className="profile-info">
-            <h1>John Doe</h1>
-            <p className="profile-username">@Johndoe</p>
+            <h1>Sarah Mitchell</h1>
+            <p className="profile-username">@sarahmitchell</p>
             <p className="profile-bio">Tech enthusiast · Gainesville, FL · Member since Jan 2025</p>
           </div>
           <div className="profile-stats">
@@ -128,6 +128,18 @@ const ProfilePage = () => {
       {/* Tabs */}
       <section className="profile-tabs">
         <button 
+          className={`tab ${activeTab === "listings" ? "active" : ""}`}
+          onClick={() => setActiveTab("listings")}
+        >
+          My Listings
+        </button>
+        <button 
+          className={`tab ${activeTab === "bids" ? "active" : ""}`}
+          onClick={() => setActiveTab("bids")}
+        >
+          My Bids
+        </button>
+        <button 
           className={`tab ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => setActiveTab("settings")}
         >
@@ -137,13 +149,119 @@ const ProfilePage = () => {
 
       {/* Content Area */}
       <section className="profile-content">
+        {activeTab === "listings" && (
+          <div className="listings-grid">
+            {userListings.map((listing) => (
+              <article key={listing.id} className="listing-card">
+                <div className="listing-image-wrap">
+                  <img src={listing.image} alt={listing.name} />
+                  <span className={`listing-status ${listing.status}`}>
+                    {listing.status === "active" && "Active"}
+                    {listing.status === "ending" && "Ending soon"}
+                    {listing.status === "sold" && "Sold"}
+                  </span>
+                </div>
+                <div className="listing-body">
+                  <h3>{listing.name}</h3>
+                  <div className="listing-details">
+                    {listing.status === "sold" ? (
+                      <>
+                        <div className="price-info">
+                          <span className="label">Final price</span>
+                          <span className="value">{listing.finalPrice}</span>
+                        </div>
+                        <div className="price-info">
+                          <span className="label">Starting bid</span>
+                          <span className="value">{listing.startingBid}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="price-info">
+                          <span className="label">Current bid</span>
+                          <span className="value">{listing.currentBid}</span>
+                        </div>
+                        <div className="price-info">
+                          <span className="label">Time left</span>
+                          <span className="value">{listing.timeLeft}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="listing-meta">
+                    <span>{listing.bids} bids</span>
+                    <button className="btn-link">View details</button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "bids" && (
+          <div className="bids-grid">
+            {userBids.map((bid) => (
+              <article key={bid.id} className="bid-card">
+                <div className="bid-image-wrap">
+                  <img src={bid.image} alt={bid.name} />
+                  <span className={`bid-status ${bid.status}`}>
+                    {bid.status === "winning" && "Winning"}
+                    {bid.status === "outbid" && "Outbid"}
+                    {bid.status === "lost" && "Lost"}
+                  </span>
+                </div>
+                <div className="bid-body">
+                  <h3>{bid.name}</h3>
+                  <div className="bid-details">
+                    <div className="price-info">
+                      <span className="label">Your bid</span>
+                      <span className="value">{bid.yourBid}</span>
+                    </div>
+                    {bid.status === "lost" ? (
+                      <div className="price-info">
+                        <span className="label">Final price</span>
+                        <span className="value">{bid.finalPrice}</span>
+                      </div>
+                    ) : (
+                      <div className="price-info">
+                        <span className="label">Current bid</span>
+                        <span className="value">{bid.currentBid}</span>
+                      </div>
+                    )}
+                  </div>
+                  {bid.timeLeft && (
+                    <div className="bid-time">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      <span>{bid.timeLeft} left</span>
+                    </div>
+                  )}
+                  <div className="bid-actions">
+                    {bid.status === "outbid" && (
+                      <button className="btn primary">Place higher bid</button>
+                    )}
+                    {bid.status === "winning" && (
+                      <button className="btn ghost">View auction</button>
+                    )}
+                    {bid.status === "lost" && (
+                      <button className="btn ghost">View details</button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
         {activeTab === "settings" && (
           <div className="settings-container">
             <div className="settings-section">
               <h2>Account Settings</h2>
               <div className="settings-group">
                 <label>Email address</label>
-                <input type="email" defaultValue="john.doe@example.com" />
+                <input type="email" defaultValue="sarah.mitchell@example.com" />
               </div>
               <div className="settings-group">
                 <label>Phone number</label>
