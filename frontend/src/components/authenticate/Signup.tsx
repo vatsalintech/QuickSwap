@@ -17,7 +17,7 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import AuthLayout from './AuthLayout';
-import { colors, textFieldStyles, authButtonStyles } from './authTheme';
+import './authenticate.css';
 
 interface FormData {
   firstName: string;
@@ -122,9 +122,9 @@ const Signup: React.FC = () => {
         footerLinkHref="/signin"
         showTerms
       >
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box component="form" onSubmit={handleSubmit} className='form'>
           {/* Name Row */}
-          <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
+          <Box className="auth-name-row">
             <TextField
               fullWidth
               label="First Name"
@@ -133,14 +133,14 @@ const Signup: React.FC = () => {
               error={!!errors.firstName}
               helperText={errors.firstName}
               size="small"
+              className="auth-textfield"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonOutlineIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                    <PersonOutlineIcon className="auth-icon" />
                   </InputAdornment>
                 ),
               }}
-              sx={textFieldStyles}
             />
             <TextField
               fullWidth
@@ -150,19 +150,19 @@ const Signup: React.FC = () => {
               error={!!errors.lastName}
               helperText={errors.lastName}
               size="small"
+              className="auth-textfield"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonOutlineIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                    <PersonOutlineIcon className="auth-icon" />
                   </InputAdornment>
                 ),
               }}
-              sx={textFieldStyles}
             />
           </Box>
 
           {/* Date of Birth - Optional */}
-          <Box sx={{ mb: 1.5 }}>
+          <Box className="mb-1-5">
             <DatePicker
               label="Date of Birth (Optional)"
               value={formData.dob}
@@ -171,7 +171,7 @@ const Signup: React.FC = () => {
                 textField: {
                   fullWidth: true,
                   size: 'small',
-                  sx: textFieldStyles,
+                  className: 'auth-textfield',
                 },
               }}
             />
@@ -187,14 +187,14 @@ const Signup: React.FC = () => {
             error={!!errors.email}
             helperText={errors.email}
             size="small"
+            className="auth-textfield mb-1-5"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailOutlinedIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                  <EmailOutlinedIcon className="auth-icon" />
                 </InputAdornment>
               ),
             }}
-            sx={{ ...textFieldStyles, mb: 1.5 }}
           />
 
           {/* Mobile Number */}
@@ -207,14 +207,14 @@ const Signup: React.FC = () => {
             helperText={errors.mobile}
             placeholder="+1 (555) 000-0000"
             size="small"
+            className="auth-textfield mb-1-5"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <PhoneOutlinedIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                  <PhoneOutlinedIcon className="auth-icon" />
                 </InputAdornment>
               ),
             }}
-            sx={{ ...textFieldStyles, mb: 1.5 }}
           />
 
           {/* Password */}
@@ -227,10 +227,11 @@ const Signup: React.FC = () => {
             error={!!errors.password}
             helperText={errors.password}
             size="small"
+            className="auth-textfield mb-1-5"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LockOutlinedIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                  <LockOutlinedIcon className="auth-icon" />
                 </InputAdornment>
               ),
               endAdornment: (
@@ -239,14 +240,13 @@ const Signup: React.FC = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     edge="end"
                     size="small"
-                    sx={{ color: colors.secondaryText }}
+                    className="auth-icon"
                   >
                     {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                   </IconButton>
                 </InputAdornment>
               ),
             }}
-            sx={{ ...textFieldStyles, mb: 1.5 }}
           />
 
           {/* Confirm Password */}
@@ -259,10 +259,11 @@ const Signup: React.FC = () => {
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword}
             size="small"
+            className="auth-textfield mb-2"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LockOutlinedIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                  <LockOutlinedIcon className="auth-icon" />
                 </InputAdornment>
               ),
               endAdornment: (
@@ -271,14 +272,13 @@ const Signup: React.FC = () => {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     edge="end"
                     size="small"
-                    sx={{ color: colors.secondaryText }}
+                    className="auth-icon"
                   >
                     {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                   </IconButton>
                 </InputAdornment>
               ),
             }}
-            sx={{ ...textFieldStyles, mb: 2 }}
           />
 
           {/* Submit Button */}
@@ -286,7 +286,7 @@ const Signup: React.FC = () => {
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ ...authButtonStyles, mb: 1.5 }}
+            className="auth-button mb-1-5"
           >
             Create Account
           </Button>
