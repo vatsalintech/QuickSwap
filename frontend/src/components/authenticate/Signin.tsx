@@ -8,13 +8,14 @@ import {
   Link,
   Checkbox,
   FormControlLabel,
+  Typography,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import AuthLayout from './AuthLayout';
-import { colors, textFieldStyles, authButtonStyles } from './authTheme';
+import './authenticate.css';
 
 interface SignInFormData {
   email: string;
@@ -27,6 +28,25 @@ interface SignInFormErrors {
   password?: string;
 }
 
+interface User {
+  id: number;
+  email: string;
+  name?: string;
+}
+
+interface Session {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  user: User;
+}
+
+interface AuthResponse {
+  session?: Session;
+  error?: string;
+  msg?: string;
+}
+
 const Signin: React.FC = () => {
   const [formData, setFormData] = useState<SignInFormData>({
     email: '',
@@ -36,12 +56,17 @@ const Signin: React.FC = () => {
 
   const [errors, setErrors] = useState<SignInFormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof SignInFormData) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const value = field === 'rememberMe' ? event.target.checked : event.target.value;
+    const value =
+      field === 'rememberMe' ? event.target.checked : event.target.value;
+
     setFormData({ ...formData, [field]: value });
+
     if (errors[field as keyof SignInFormErrors]) {
       setErrors({ ...errors, [field]: undefined });
     }
@@ -64,11 +89,61 @@ const Signin: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (validateForm()) {
-      console.log('Sign in submitted:', formData);
-      // Handle sign in logic here
+
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+      setApiError(null);
+
+      const response = await fetch('http://myapp.com/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+          rememberMe: formData.rememberMe,
+        }),
+      });
+
+      const data: AuthResponse = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      if (!data.session) {
+        throw new Error('Invalid server response');
+      }
+
+      const { access_token, refresh_token, expires_in, user } = data.session;
+
+      // Store refresh token (persistent)
+      localStorage.setItem('refreshToken', refresh_token);
+
+      // Store access token expiry time
+      localStorage.setItem(
+        'accessTokenExpiry',
+        (Date.now() + expires_in * 1000).toString()
+      );
+
+      // Store access token (if you don't have AuthContext yet)
+      localStorage.setItem('accessToken', access_token);
+
+      // Optional: store user
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Redirect (example)
+      window.location.href = '/dashboard';
+
+    } catch (err: any) {
+      setApiError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,8 +155,14 @@ const Signin: React.FC = () => {
       footerLinkText="Sign Up"
       footerLinkHref="/signup"
     >
-      <Box component="form" onSubmit={handleSubmit}>
-        {/* Email */}
+      <Box component="form" onSubmit={handleSubmit} className="form">
+
+        {apiError && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {apiError}
+          </Typography>
+        )}
+
         <TextField
           fullWidth
           label="Email Address"
@@ -91,17 +172,16 @@ const Signin: React.FC = () => {
           error={!!errors.email}
           helperText={errors.email}
           size="small"
+          className="auth-textfield mb-1-5"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <EmailOutlinedIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                <EmailOutlinedIcon className="auth-icon" />
               </InputAdornment>
             ),
           }}
-          sx={{ ...textFieldStyles, mb: 1.5 }}
         />
 
-        {/* Password */}
         <TextField
           fullWidth
           label="Password"
@@ -111,10 +191,11 @@ const Signin: React.FC = () => {
           error={!!errors.password}
           helperText={errors.password}
           size="small"
+          className="auth-textfield mb-1"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <LockOutlinedIcon sx={{ color: colors.secondaryText, fontSize: '1.2rem' }} />
+                <LockOutlinedIcon className="auth-icon" />
               </InputAdornment>
             ),
             endAdornment: (
@@ -123,72 +204,44 @@ const Signin: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   edge="end"
                   size="small"
-                  sx={{ color: colors.secondaryText }}
                 >
-                  {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  {showPassword ? (
+                    <VisibilityOff fontSize="small" />
+                  ) : (
+                    <Visibility fontSize="small" />
+                  )}
                 </IconButton>
               </InputAdornment>
             ),
           }}
-          sx={{ ...textFieldStyles, mb: 1 }}
         />
 
-        {/* Remember Me & Forgot Password Row */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-          }}
-        >
+        <Box className="auth-remember-row">
           <FormControlLabel
             control={
               <Checkbox
                 checked={formData.rememberMe}
                 onChange={handleInputChange('rememberMe')}
                 size="small"
-                sx={{
-                  color: colors.borders,
-                  '&.Mui-checked': {
-                    color: colors.primaryBlue,
-                  },
-                }}
               />
             }
             label="Remember me"
-            sx={{
-              '& .MuiFormControlLabel-label': {
-                fontSize: '0.85rem',
-                color: colors.secondaryText,
-              },
-            }}
           />
-          <Link
-            href="/forgot-password"
-            sx={{
-              color: colors.primaryBlue,
-              textDecoration: 'none',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              '&:hover': {
-                textDecoration: 'underline',
-              },
-            }}
-          >
+          <Link href="/forgot-password">
             Forgot Password?
           </Link>
         </Box>
 
-        {/* Submit Button */}
         <Button
           type="submit"
           fullWidth
           variant="contained"
-          sx={{ ...authButtonStyles, mb: 1.5 }}
+          disabled={loading}
+          className="auth-button mb-1-5"
         >
-          Sign In
+          {loading ? 'Signing In...' : 'Sign In'}
         </Button>
+
       </Box>
     </AuthLayout>
   );

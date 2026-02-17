@@ -6,7 +6,7 @@ import {
   Typography,
   Link,
 } from '@mui/material';
-import { colors, authContainerStyles, authPaperStyles, linkStyles } from './authTheme';
+import './authenticate.css';
 
 interface AuthLayoutProps {
   title: string;
@@ -28,58 +28,31 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   showTerms = false,
 }) => {
   return (
-    <Box sx={authContainerStyles}>
-      <Container maxWidth="sm">
-        <Paper elevation={0} sx={authPaperStyles}>
-          {/* Header */}
-          <Box sx={{ textAlign: 'center', mb: 2 }}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                color: colors.text,
-                mb: 0.5,
-              }}
-            >
+    <Box className="auth-container">
+      < Container maxWidth="sm">
+        <Paper elevation={0} className="auth-paper">
+          <Box className="auth-header">
+            <Typography variant="h5" className="auth-title">
               {title}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{ color: colors.secondaryText }}
-            >
+            <Typography variant="body2" className="auth-subtitle">
               {subtitle}
             </Typography>
           </Box>
-
-          {/* Form Content */}
           {children}
-
-          {/* Divider */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              my: 1,
-            }}
-          >
-            <Box sx={{ flex: 1, height: '1px', backgroundColor: colors.subtleGray }} />
-            <Typography
-              sx={{
-                px: 2,
-                color: colors.secondaryText,
-                fontSize: '0.8rem',
-              }}
-            >
+          <Box className="auth-divider">
+            <Box className="auth-divider-line" />
+            <Typography className="auth-divider-text">
               or
             </Typography>
-            <Box sx={{ flex: 1, height: '1px', backgroundColor: colors.subtleGray }} />
+            <Box className="auth-divider-line" />
           </Box>
 
           {/* Footer Link */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: colors.secondaryText }}>
+          <Box className="auth-footer">
+            <Typography variant="body2" className="auth-footer-text">
               {footerText}{' '}
-              <Link href={footerLinkHref} sx={linkStyles}>
+              <Link href={footerLinkHref} className="auth-link">
                 {footerLinkText}
               </Link>
             </Typography>
@@ -87,34 +60,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 
           {/* Terms */}
           {showTerms && (
-            <Typography
-              sx={{
-                textAlign: 'center',
-                color: colors.secondaryText,
-                fontSize: '0.7rem',
-                mt: 1.5,
-              }}
-            >
+            <Typography className="auth-terms">
               By creating an account, you agree to our{' '}
-              <Link
-                href="/terms"
-                sx={{
-                  color: colors.primaryBlue,
-                  textDecoration: 'none',
-                  '&:hover': { textDecoration: 'underline' },
-                }}
-              >
+              <Link href="/terms" className="auth-link">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link
-                href="/privacy"
-                sx={{
-                  color: colors.primaryBlue,
-                  textDecoration: 'none',
-                  '&:hover': { textDecoration: 'underline' },
-                }}
-              >
+              <Link href="/privacy" className="auth-link">
                 Privacy Policy
               </Link>
             </Typography>
@@ -126,3 +78,4 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 };
 
 export default AuthLayout;
+
