@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/quickswap/quickswap/internal/auth"
+	"github.com/quickswap/quickswap/internal/db"
 )
 
 func main() {
@@ -22,6 +24,26 @@ func main() {
 	}
 
 	authClient := auth.NewClient(url, key)
+
+	// Initialize Database (PostgreSQL/Supabase)
+	ctx := context.Background()
+	pgPool, err := db.NewPostgresPool(ctx)
+	if err != nil {
+		log.Printf("Warning: Could not connect to PostgreSQL: %v (Check DATABASE_URL in .env)", err)
+	} else {
+		defer pgPool.Close()
+	}
+
+	// Initialize Redis
+	redisClient, err := db.NewRedisClient(ctx)
+	if err != nil {
+		log.Printf("Warning: Could not connect to Redis: %v (Check REDIS_URL in .env)", err)
+	} else {
+		defer redisClient.Close()
+	}
+
+	_ = pgPool      // Keep for future use in handlers
+	_ = redisClient // Keep for future use in handlers
 
 	// Static files (login page)
 	fs := http.FileServer(http.Dir("web"))
