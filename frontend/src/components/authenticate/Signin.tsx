@@ -5,9 +5,6 @@ import {
   Button,
   InputAdornment,
   IconButton,
-  Link,
-  Checkbox,
-  FormControlLabel,
   Typography,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
@@ -215,8 +212,9 @@ const Signin: React.FC = () => {
             ),
           }}
         />
+        {/* will implement in next sprint */}
 
-        <Box className="auth-remember-row">
+        {/* <Box className="auth-remember-row">
           <FormControlLabel
             control={
               <Checkbox
@@ -230,7 +228,7 @@ const Signin: React.FC = () => {
           <Link href="/forgot-password">
             Forgot Password?
           </Link>
-        </Box>
+        </Box> */}
 
         <Button
           type="submit"

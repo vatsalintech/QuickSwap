@@ -5,11 +5,8 @@ import {
   Button,
   InputAdornment,
   IconButton,
+  Typography,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Dayjs } from 'dayjs';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -22,7 +19,6 @@ import './authenticate.css';
 interface FormData {
   firstName: string;
   lastName: string;
-  dob: Dayjs | null;
   email: string;
   password: string;
   confirmPassword: string;
@@ -42,7 +38,6 @@ const Signup: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
-    dob: null,
     email: '',
     password: '',
     confirmPassword: '',
@@ -52,18 +47,17 @@ const Signup: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof FormData) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData({ ...formData, [field]: event.target.value });
+
     if (errors[field as keyof FormErrors]) {
       setErrors({ ...errors, [field]: undefined });
     }
-  };
-
-  const handleDateChange = (newValue: Dayjs | null) => {
-    setFormData({ ...formData, dob: newValue });
   };
 
   const validateForm = (): boolean => {
@@ -105,194 +99,225 @@ const Signup: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
+
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+      setApiError(null);
+
+      const response = await fetch("http://myapp.com/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          mobile: formData.mobile.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Signup failed");
+      }
+
+      // If backend auto-logs in user
+      if (data.session) {
+        const { access_token, refresh_token, expires_in, user } = data.session;
+
+        localStorage.setItem("accessToken", access_token);
+        localStorage.setItem("refreshToken", refresh_token);
+        localStorage.setItem(
+          "accessTokenExpiry",
+          (Date.now() + expires_in * 1000).toString()
+        );
+        localStorage.setItem("user", JSON.stringify(user));
+
+        window.location.href = "/dashboard";
+      } else {
+        alert("Account created successfully. Please sign in.");
+        window.location.href = "/signin";
+      }
+
+    } catch (err: any) {
+      setApiError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <AuthLayout
-        title="Create Account"
-        subtitle="Join QuickSwap and start trading today"
-        footerText="Already have an account?"
-        footerLinkText="Sign In"
-        footerLinkHref="/signin"
-        showTerms
-      >
-        <Box component="form" onSubmit={handleSubmit} className='form'>
-          {/* Name Row */}
-          <Box className="auth-name-row">
-            <TextField
-              fullWidth
-              label="First Name"
-              value={formData.firstName}
-              onChange={handleInputChange('firstName')}
-              error={!!errors.firstName}
-              helperText={errors.firstName}
-              size="small"
-              className="auth-textfield"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonOutlineIcon className="auth-icon" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              fullWidth
-              label="Last Name"
-              value={formData.lastName}
-              onChange={handleInputChange('lastName')}
-              error={!!errors.lastName}
-              helperText={errors.lastName}
-              size="small"
-              className="auth-textfield"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonOutlineIcon className="auth-icon" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
+    <AuthLayout
+      title="Create Account"
+      subtitle="Join QuickSwap and start trading today"
+      footerText="Already have an account?"
+      footerLinkText="Sign In"
+      footerLinkHref="/signin"
+      showTerms
+    >
+      <Box component="form" onSubmit={handleSubmit} className="form">
 
-          {/* Date of Birth - Optional */}
-          <Box className="mb-1-5">
-            <DatePicker
-              label="Date of Birth (Optional)"
-              value={formData.dob}
-              onChange={handleDateChange}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  size: 'small',
-                  className: 'auth-textfield',
-                },
-              }}
-            />
-          </Box>
+        {apiError && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {apiError}
+          </Typography>
+        )}
 
-          {/* Email */}
+        {/* Name Fields */}
+        <Box className="auth-name-row">
           <TextField
             fullWidth
-            label="Email Address"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange('email')}
-            error={!!errors.email}
-            helperText={errors.email}
+            label="First Name"
+            value={formData.firstName}
+            onChange={handleInputChange('firstName')}
+            error={!!errors.firstName}
+            helperText={errors.firstName}
             size="small"
-            className="auth-textfield mb-1-5"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailOutlinedIcon className="auth-icon" />
+                  <PersonOutlineIcon fontSize="small" />
                 </InputAdornment>
               ),
             }}
           />
-
-          {/* Mobile Number */}
           <TextField
             fullWidth
-            label="Mobile Number"
-            value={formData.mobile}
-            onChange={handleInputChange('mobile')}
-            error={!!errors.mobile}
-            helperText={errors.mobile}
-            placeholder="+1 (555) 000-0000"
+            label="Last Name"
+            value={formData.lastName}
+            onChange={handleInputChange('lastName')}
+            error={!!errors.lastName}
+            helperText={errors.lastName}
             size="small"
-            className="auth-textfield mb-1-5"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <PhoneOutlinedIcon className="auth-icon" />
+                  <PersonOutlineIcon fontSize="small" />
                 </InputAdornment>
               ),
             }}
           />
-
-          {/* Password */}
-          <TextField
-            fullWidth
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            value={formData.password}
-            onChange={handleInputChange('password')}
-            error={!!errors.password}
-            helperText={errors.password}
-            size="small"
-            className="auth-textfield mb-1-5"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockOutlinedIcon className="auth-icon" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    size="small"
-                    className="auth-icon"
-                  >
-                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {/* Confirm Password */}
-          <TextField
-            fullWidth
-            label="Confirm Password"
-            type={showConfirmPassword ? 'text' : 'password'}
-            value={formData.confirmPassword}
-            onChange={handleInputChange('confirmPassword')}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-            size="small"
-            className="auth-textfield mb-2"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockOutlinedIcon className="auth-icon" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    edge="end"
-                    size="small"
-                    className="auth-icon"
-                  >
-                    {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            className="auth-button mb-1-5"
-          >
-            Create Account
-          </Button>
         </Box>
-      </AuthLayout>
-    </LocalizationProvider>
+
+        {/* Email */}
+        <TextField
+          fullWidth
+          label="Email Address"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange('email')}
+          error={!!errors.email}
+          helperText={errors.email}
+          size="small"
+          className="mb-1-5"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <EmailOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Mobile */}
+        <TextField
+          fullWidth
+          label="Mobile Number"
+          value={formData.mobile}
+          onChange={handleInputChange('mobile')}
+          error={!!errors.mobile}
+          helperText={errors.mobile}
+          size="small"
+          className="mb-1-5"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <PhoneOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Password */}
+        <TextField
+          fullWidth
+          label="Password"
+          type={showPassword ? 'text' : 'password'}
+          value={formData.password}
+          onChange={handleInputChange('password')}
+          error={!!errors.password}
+          helperText={errors.password}
+          size="small"
+          className="mb-1-5"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LockOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                  size="small"
+                >
+                  {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Confirm Password */}
+        <TextField
+          fullWidth
+          label="Confirm Password"
+          type={showConfirmPassword ? 'text' : 'password'}
+          value={formData.confirmPassword}
+          onChange={handleInputChange('confirmPassword')}
+          error={!!errors.confirmPassword}
+          helperText={errors.confirmPassword}
+          size="small"
+          className="mb-2"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LockOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  edge="end"
+                  size="small"
+                >
+                  {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? "Creating Account..." : "Create Account"}
+        </Button>
+
+      </Box>
+    </AuthLayout>
   );
 };
 
