@@ -27,8 +27,11 @@ type LoginRequest struct {
 
 // SignupRequest is the request body for signup.
 type SignupRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Mobile    string `json:"mobile"`
 }
 
 // Session holds the auth session data.
