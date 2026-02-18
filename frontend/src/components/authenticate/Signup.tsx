@@ -108,7 +108,12 @@ const Signup: React.FC = () => {
       setLoading(true);
       setApiError(null);
 
-      const response = await fetch("http://myapp.com/signup", {
+      const apiBase = (import.meta.env.VITE_API_BASE as string) || '';
+      const signupUrl = apiBase
+        ? `${apiBase.replace(/\/$/, '')}/api/auth/signup`
+        : '/api/auth/signup';
+
+      const response = await fetch(signupUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -121,30 +126,42 @@ const Signup: React.FC = () => {
           mobile: formData.mobile.trim(),
         }),
       });
+      const parsed: any = await response.json();
 
-      const data = await response.json();
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "Signup failed");
+      if (!response.ok || parsed.error) {
+        throw new Error(parsed.error || 'Signup failed');
       }
 
-      // If backend auto-logs in user
-      if (data.session) {
-        const { access_token, refresh_token, expires_in, user } = data.session;
+      // If backend auto-logs in user, accept either { session: {...} } or flat token fields
+      let session = parsed.session
+        ? parsed.session
+        : parsed.access_token
+        ? {
+            access_token: parsed.access_token,
+            refresh_token: parsed.refresh_token,
+            expires_in: parsed.expires_in,
+            user: parsed.user,
+          }
+        : null;
 
-        localStorage.setItem("accessToken", access_token);
-        localStorage.setItem("refreshToken", refresh_token);
+      if (session && session.access_token) {
+        const { access_token, refresh_token, expires_in, user } = session;
+
+        localStorage.setItem('accessToken', access_token);
+        localStorage.setItem('refreshToken', refresh_token);
         localStorage.setItem(
-          "accessTokenExpiry",
+          'accessTokenExpiry',
           (Date.now() + expires_in * 1000).toString()
         );
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem('user', JSON.stringify(user));
 
-        window.location.href = "/dashboard";
-      } else {
-        alert("Account created successfully. Please sign in.");
-        window.location.href = "/signin";
+        window.location.href = '/dashboard';
+        return;
       }
+
+      // No session: signup likely requires email confirmation
+      alert(parsed.message || parsed.msg || 'Account created successfully. Please sign in.');
+      window.location.href = '/signin';
 
     } catch (err: any) {
       setApiError(err.message);

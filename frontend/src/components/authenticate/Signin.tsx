@@ -94,8 +94,11 @@ const Signin: React.FC = () => {
     try {
       setLoading(true);
       setApiError(null);
-
-      const response = await fetch('http://myapp.com/signin', {
+      const apiBase = (import.meta.env.VITE_API_BASE as string) || '';
+      const loginUrl = apiBase
+        ? `${apiBase.replace(/\/$/, '')}/api/auth/login`
+        : '/api/auth/login';
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
