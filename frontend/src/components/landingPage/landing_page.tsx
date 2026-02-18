@@ -1,9 +1,7 @@
 // LandingPage.tsx
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./landing_page.css";
 // import Signup from './components/authenticate/Signup';
-import Signin from '../authenticate/Signin';
 
 const mockListings = [
   {
@@ -54,7 +52,18 @@ const LandingPage = () => {
     // Navigate back to landing page
     navigate("/", { replace: true });
   };
-  
+
+  const handleStartSelling = () => {
+    if (!isLoggedIn) {
+      // not logged in → go to sign in
+      navigate("/signin");
+      return;
+    }
+    // logged in: later this can go to /sell; for now maybe /profile
+    // navigate("/sell");
+    navigate("/profile");
+  };
+
   return (
     <div className="landing">
       {/* Navbar */}
@@ -68,7 +77,9 @@ const LandingPage = () => {
           <a href="#about">Why Quickswap</a>
         </nav>
         <div className="navbar-actions">
-          <button className="btn primary">Start selling</button>
+          <button className="btn primary" onClick={handleStartSelling}>
+            Start selling
+          </button>
           {isLoggedIn ? (
             <>
               <button className="btn ghost" onClick={() => navigate("/profile")}>
@@ -209,7 +220,7 @@ const LandingPage = () => {
               competitive bidding.
             </p>
           </div>
-          <button className="btn primary">Join the early access</button>
+          <button className="btn primary" onClick={() => navigate("/signin")}>Join the early access</button>
         </div>
       </section>
 
