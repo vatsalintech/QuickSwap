@@ -1,14 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Signup from './components/authenticate/Signup'
 import Signin from './components/authenticate/Signin'
+import LandingPage from './components/landingPage/landing_page'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/signin" element={<Signin />} />
-        <Route path="/" element={<Navigate to="/signin" replace />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
