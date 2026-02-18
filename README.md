@@ -7,7 +7,7 @@ This project modernizes traditional classified marketplaces by replacing chat-ba
 The app uses Supabase for authentication. To run locally:
 
 1. Create a project at [supabase.com](https://supabase.com) and get your API credentials (Settings → API).
-2. Copy `.env.example` to `.env` and fill in:
+2. Copy `.env` and fill in:
    - `SUPABASE_URL` — your project URL (e.g. `https://xxx.supabase.co`)
    - `SUPABASE_ANON_KEY` — your anon/public key
 3. Run the auth server:
@@ -16,14 +16,19 @@ The app uses Supabase for authentication. To run locally:
    ```
 4. Open http://localhost:8080 in your browser.
 
-### API Endpoints
+## Frontend Setup
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login with `{ "email", "password" }` |
-| POST | `/api/auth/signup` | Sign up with `{ "email", "password" }` |
-| POST | `/api/auth/logout` | Logout (requires `Authorization: Bearer <token>`) |
-| GET | `/api/auth/me` | Get current user (requires `Authorization: Bearer <token>`) |
+1. `cd frontend`
+2. Run `npm install`
+3.  set `VITE_API_BASE`=http://localhost:8082 in `frontend/.env` if you want to point to a remote backend
+4.. Start the frontend dev server:
+   ```bash
+   npm run dev
+   ```
+   This will launch the app at [http://localhost:5173]
+
+
+
 
 ## Members
 
