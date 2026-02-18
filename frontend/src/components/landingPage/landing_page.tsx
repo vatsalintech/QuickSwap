@@ -1,6 +1,9 @@
 // LandingPage.tsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./landing_page.css";
+// import Signup from './components/authenticate/Signup';
+import Signin from '../authenticate/Signin';
 
 const mockListings = [
   {
@@ -38,6 +41,7 @@ const mockListings = [
 ];
 
 const LandingPage = () => {
+  const navigate = useNavigate();
   return (
     <div className="landing">
       {/* Navbar */}
@@ -52,7 +56,9 @@ const LandingPage = () => {
         </nav>
         <div className="navbar-actions">
           <button className="btn primary">Start selling</button>
-          <button className="btn ghost">Sign in</button>
+          <button className="btn ghost" onClick={() => navigate("/signin")}>
+            Sign in
+          </button>
         </div>
       </header>
 
