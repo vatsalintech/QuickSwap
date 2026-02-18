@@ -74,7 +74,7 @@ const LandingPage = () => {
         <nav className="navbar-links">
           <a href="#features">How it works</a>
           <a href="#auctions">Live auctions</a>
-          <a href="#about">Why Quickswap</a>
+          {!isLoggedIn && (<a href="#about">Why Quickswap</a>)}
         </nav>
         <div className="navbar-actions">
           <button className="btn primary" onClick={handleStartSelling}>
@@ -209,6 +209,7 @@ const LandingPage = () => {
       </section>
 
       {/* About / CTA */}
+      {!isLoggedIn && (
       <section id="about" className="about">
         <div className="about-inner">
           <div>
@@ -223,6 +224,7 @@ const LandingPage = () => {
           <button className="btn primary" onClick={() => navigate("/signin")}>Join the early access</button>
         </div>
       </section>
+      )}
 
       {/* Footer */}
       <footer className="footer">
