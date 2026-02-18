@@ -1,0 +1,324 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  InputAdornment,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import AuthLayout from './AuthLayout';
+import './authenticate.css';
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  mobile: string;
+}
+
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  mobile?: string;
+}
+
+const Signup: React.FC = () => {
+  const [formData, setFormData] = useState<FormData>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    mobile: '',
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const handleInputChange = (field: keyof FormData) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setFormData({ ...formData, [field]: event.target.value });
+
+    if (errors[field as keyof FormErrors]) {
+      setErrors({ ...errors, [field]: undefined });
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!formData.mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required';
+    } else if (!/^[\d\s\-+()]{10,}$/.test(formData.mobile)) {
+      newErrors.mobile = 'Please enter a valid mobile number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+      setApiError(null);
+
+      const response = await fetch("http://myapp.com/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          mobile: formData.mobile.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Signup failed");
+      }
+
+      // If backend auto-logs in user
+      if (data.session) {
+        const { access_token, refresh_token, expires_in, user } = data.session;
+
+        localStorage.setItem("accessToken", access_token);
+        localStorage.setItem("refreshToken", refresh_token);
+        localStorage.setItem(
+          "accessTokenExpiry",
+          (Date.now() + expires_in * 1000).toString()
+        );
+        localStorage.setItem("user", JSON.stringify(user));
+
+        window.location.href = "/dashboard";
+      } else {
+        alert("Account created successfully. Please sign in.");
+        window.location.href = "/signin";
+      }
+
+    } catch (err: any) {
+      setApiError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthLayout
+      title="Create Account"
+      subtitle="Join QuickSwap and start trading today"
+      footerText="Already have an account?"
+      footerLinkText="Sign In"
+      footerLinkHref="/signin"
+      showTerms
+    >
+      <Box component="form" onSubmit={handleSubmit} className="form">
+
+        {apiError && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {apiError}
+          </Typography>
+        )}
+
+        {/* Name Fields */}
+        <Box className="auth-name-row">
+          <TextField
+            fullWidth
+            label="First Name"
+            value={formData.firstName}
+            onChange={handleInputChange('firstName')}
+            error={!!errors.firstName}
+            helperText={errors.firstName}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonOutlineIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Last Name"
+            value={formData.lastName}
+            onChange={handleInputChange('lastName')}
+            error={!!errors.lastName}
+            helperText={errors.lastName}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonOutlineIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        {/* Email */}
+        <TextField
+          fullWidth
+          label="Email Address"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange('email')}
+          error={!!errors.email}
+          helperText={errors.email}
+          size="small"
+          className="mb-1-5"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <EmailOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Mobile */}
+        <TextField
+          fullWidth
+          label="Mobile Number"
+          value={formData.mobile}
+          onChange={handleInputChange('mobile')}
+          error={!!errors.mobile}
+          helperText={errors.mobile}
+          size="small"
+          className="mb-1-5"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <PhoneOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Password */}
+        <TextField
+          fullWidth
+          label="Password"
+          type={showPassword ? 'text' : 'password'}
+          value={formData.password}
+          onChange={handleInputChange('password')}
+          error={!!errors.password}
+          helperText={errors.password}
+          size="small"
+          className="mb-1-5"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LockOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                  size="small"
+                >
+                  {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Confirm Password */}
+        <TextField
+          fullWidth
+          label="Confirm Password"
+          type={showConfirmPassword ? 'text' : 'password'}
+          value={formData.confirmPassword}
+          onChange={handleInputChange('confirmPassword')}
+          error={!!errors.confirmPassword}
+          helperText={errors.confirmPassword}
+          size="small"
+          className="mb-2"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LockOutlinedIcon fontSize="small" />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  edge="end"
+                  size="small"
+                >
+                  {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? "Creating Account..." : "Create Account"}
+        </Button>
+
+      </Box>
+    </AuthLayout>
+  );
+};
+
+export default Signup;
