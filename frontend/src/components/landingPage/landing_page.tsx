@@ -42,6 +42,19 @@ const mockListings = [
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  
+  const isLoggedIn = !!localStorage.getItem("user");
+  const handleLogout = () => {
+    // Clear auth-related data
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("accessTokenExpiry");
+    localStorage.removeItem("user");
+
+    // Navigate back to landing page
+    navigate("/", { replace: true });
+  };
+  
   return (
     <div className="landing">
       {/* Navbar */}
@@ -56,9 +69,20 @@ const LandingPage = () => {
         </nav>
         <div className="navbar-actions">
           <button className="btn primary">Start selling</button>
+          {isLoggedIn ? (
+            <>
+              <button className="btn ghost" onClick={() => navigate("/profile")}>
+                Profile
+              </button>
+              <button className="btn ghost" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
           <button className="btn ghost" onClick={() => navigate("/signin")}>
             Sign in
           </button>
+        )}
         </div>
       </header>
 
