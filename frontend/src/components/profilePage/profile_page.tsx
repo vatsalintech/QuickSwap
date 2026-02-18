@@ -1,9 +1,63 @@
 // ProfilePage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./profile_page.css";
 
+interface MeResponse {
+  id: string;
+  email: string;
+}
+
 const ProfilePage = () => {
-  const [activeTab, setActiveTab] = useState("listings");
+  const [activeTab, setActiveTab] = useState<"listings" | "bids" | "settings">("listings");
+  const [user, setUser] = useState<MeResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+
+  // Fetch current user from backend
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          setError("Not authenticated");
+          navigate("/signin");
+          return;
+        }
+
+        const apiBase = (import.meta.env.VITE_API_BASE as string) || "";
+        const meUrl = apiBase
+          ? `${apiBase.replace(/\/$/, "")}/api/auth/me`
+          : "/api/auth/me";
+
+        const res = await fetch(meUrl, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          // e.g. 401 invalid/expired token
+          setError("Session expired");
+          navigate("/signin");
+          return;
+        }
+
+        const data: MeResponse = await res.json();
+        setUser(data);
+      } catch (err: any) {
+        console.error("Failed to fetch /me:", err);
+        setError("Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMe();
+  }, [navigate]);
 
   const userListings = [
     {
@@ -14,7 +68,8 @@ const ProfilePage = () => {
       timeLeft: "1h 23m",
       bids: 12,
       status: "active",
-      image: "https://images.pexels.com/photos/2115217/pexels-photo-2115217.jpeg?auto=compress&cs=tinysrgb&w=600",
+      image:
+        "https://images.pexels.com/photos/2115217/pexels-photo-2115217.jpeg?auto=compress&cs=tinysrgb&w=600",
     },
     {
       id: 2,
@@ -24,7 +79,8 @@ const ProfilePage = () => {
       timeLeft: "5m",
       bids: 8,
       status: "ending",
-      image: "https://images.pexels.com/photos/1714208/pexels-photo-1714208.jpeg?auto=compress&cs=tinysrgb&w=600",
+      image:
+        "https://images.pexels.com/photos/1714208/pexels-photo-1714208.jpeg?auto=compress&cs=tinysrgb&w=600",
     },
     {
       id: 3,
@@ -33,7 +89,8 @@ const ProfilePage = () => {
       startingBid: "$400",
       bids: 15,
       status: "sold",
-      image: "https://images.pexels.com/photos/1334597/pexels-photo-1334597.jpeg?auto=compress&cs=tinysrgb&w=600",
+      image:
+        "https://images.pexels.com/photos/1334597/pexels-photo-1334597.jpeg?auto=compress&cs=tinysrgb&w=600",
     },
   ];
 
@@ -45,7 +102,8 @@ const ProfilePage = () => {
       currentBid: "$650",
       timeLeft: "20m",
       status: "outbid",
-      image: "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      image:
+        "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg?auto=compress&cs=tinysrgb&w=600",
     },
     {
       id: 2,
@@ -54,7 +112,8 @@ const ProfilePage = () => {
       currentBid: "$185",
       timeLeft: "45m",
       status: "winning",
-      image: "https://images.pexels.com/photos/3394664/pexels-photo-3394664.jpeg?auto=compress&cs=tinysrgb&w=600",
+      image:
+        "https://images.pexels.com/photos/3394664/pexels-photo-3394664.jpeg?auto=compress&cs=tinysrgb&w=600",
     },
     {
       id: 3,
@@ -62,9 +121,23 @@ const ProfilePage = () => {
       yourBid: "$890",
       finalPrice: "$920",
       status: "lost",
-      image: "https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=600",
+      image:
+        "https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=600",
     },
   ];
+
+  // Simple loading / error states for now
+  if (loading) {
+    return <div className="profile-page">Loading profile…</div>;
+  }
+
+  if (error || !user) {
+    return <div className="profile-page">Unable to load profile.</div>;
+  }
+
+  // Derive a display name from email for now
+  const displayName = user.email.split("@")[0]; // e.g., vatsal.shah -> "vatsal.shah"
+  const username = `@${displayName}`;
 
   return (
     <div className="profile-page">
@@ -76,11 +149,20 @@ const ProfilePage = () => {
         <nav className="navbar-links">
           <a href="#browse">Browse</a>
           <a href="#sell">Sell</a>
-          <a href="#profile" className="active">Profile</a>
+          <a href="#profile" className="active">
+            Profile
+          </a>
         </nav>
         <div className="navbar-actions">
           <button className="btn ghost-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
@@ -92,17 +174,28 @@ const ProfilePage = () => {
       <section className="profile-header">
         <div className="profile-header-content">
           <div className="profile-avatar">
-            <img src="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=600" alt="User avatar" />
+            {/* For now keep a placeholder avatar */}
+            <img
+              src="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=600"
+              alt="User avatar"
+            />
             <span className="profile-verified">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
           </div>
           <div className="profile-info">
-            <h1>Sarah Mitchell</h1>
-            <p className="profile-username">@sarahmitchell</p>
-            <p className="profile-bio">Tech enthusiast · Gainesville, FL · Member since Jan 2025</p>
+            <h1>{displayName}</h1>
+            <p className="profile-username">{username}</p>
+            <p className="profile-bio">
+              Tech-Enthusiast | Gainesville, Florida
+            </p>
           </div>
           <div className="profile-stats">
             <div className="stat">
@@ -127,19 +220,19 @@ const ProfilePage = () => {
 
       {/* Tabs */}
       <section className="profile-tabs">
-        <button 
+        <button
           className={`tab ${activeTab === "listings" ? "active" : ""}`}
           onClick={() => setActiveTab("listings")}
         >
           My Listings
         </button>
-        <button 
+        <button
           className={`tab ${activeTab === "bids" ? "active" : ""}`}
           onClick={() => setActiveTab("bids")}
         >
           My Bids
         </button>
-        <button 
+        <button
           className={`tab ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => setActiveTab("settings")}
         >
@@ -231,7 +324,14 @@ const ProfilePage = () => {
                   </div>
                   {bid.timeLeft && (
                     <div className="bid-time">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                       </svg>
@@ -261,7 +361,7 @@ const ProfilePage = () => {
               <h2>Account Settings</h2>
               <div className="settings-group">
                 <label>Email address</label>
-                <input type="email" defaultValue="sarah.mitchell@example.com" />
+                <input type="email" defaultValue={user.email} />
               </div>
               <div className="settings-group">
                 <label>Phone number</label>
@@ -273,7 +373,6 @@ const ProfilePage = () => {
               </div>
               <button className="btn primary">Save changes</button>
             </div>
-
             <div className="settings-section">
               <h2>Privacy & Security</h2>
               <div className="settings-group">
