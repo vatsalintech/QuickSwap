@@ -19,6 +19,7 @@ func NewRouter(c *auth.Client) http.Handler {
 	mux.HandleFunc("/api/auth/signup", signupHandler(c))
 	mux.HandleFunc("/api/auth/logout", logoutHandler(c))
 	mux.HandleFunc("/api/auth/me", meHandler(c))
+	mux.HandleFunc("/api/profile", profileHandler(c))
 	return mux
 }
 
@@ -198,6 +199,61 @@ func meHandler(c *auth.Client) http.HandlerFunc {
 	}
 }
 
+func profileHandler(c *auth.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		token := r.Header.Get("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+		if token == "" {
+			respondError(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// 1. Get user ID from Supabase Auth
+		supaURL := os.Getenv("SUPABASE_URL")
+		supaKey := os.Getenv("SUPABASE_ANON_KEY")
+
+		authReq, _ := http.NewRequest("GET", supaURL+"/auth/v1/user", nil)
+		authReq.Header.Set("apikey", supaKey)
+		authReq.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(authReq)
+		if err != nil {
+			respondError(w, "Failed to verify session", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			respondError(w, "Invalid session", http.StatusUnauthorized)
+			return
+		}
+
+		var userData struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&userData); err != nil {
+			respondError(w, "Error parsing user data", http.StatusInternalServerError)
+			return
+		}
+
+		// 2. Fetch profile from DB
+		profile, err := getProfile(userData.ID)
+		if err != nil {
+			respondError(w, "Profile not found or error fetching", http.StatusNotFound)
+			return
+		}
+
+		respondJSON(w, profile)
+	}
+}
+
 func respondJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
@@ -264,4 +320,42 @@ func storeProfile(userID, firstName, lastName, mobile, email string) error {
 	}
 
 	return nil
+}
+
+func getProfile(userID string) (map[string]interface{}, error) {
+	supaURL := os.Getenv("SUPABASE_URL")
+	apiKey := os.Getenv("SUPABASE_SERVICE_KEY")
+	if apiKey == "" {
+		apiKey = os.Getenv("SUPABASE_ANON_KEY")
+	}
+
+	url := fmt.Sprintf("%s/rest/v1/profiles?id=eq.%s&select=*", supaURL, userID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("apikey", apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch profile: status=%d", resp.StatusCode)
+	}
+
+	var profiles []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&profiles); err != nil {
+		return nil, err
+	}
+
+	if len(profiles) == 0 {
+		return nil, fmt.Errorf("profile not found")
+	}
+
+	return profiles[0], nil
 }
