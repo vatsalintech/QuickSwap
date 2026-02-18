@@ -127,19 +127,19 @@ const ProfilePage = () => {
 
       {/* Tabs */}
       <section className="profile-tabs">
-        <button 
+        <button
           className={`tab ${activeTab === "listings" ? "active" : ""}`}
           onClick={() => setActiveTab("listings")}
         >
           My Listings
         </button>
-        <button 
+        <button
           className={`tab ${activeTab === "bids" ? "active" : ""}`}
           onClick={() => setActiveTab("bids")}
         >
           My Bids
         </button>
-        <button 
+        <button
           className={`tab ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => setActiveTab("settings")}
         >
