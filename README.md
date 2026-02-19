@@ -14,7 +14,7 @@ The app uses Supabase for authentication. To run locally:
    ```bash
    go run ./cmd/server
    ```
-4. Open http://localhost:8080 in your browser.
+4. Open http://localhost:8082 in your browser.
 
 ## Frontend Setup
 
