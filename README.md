@@ -21,7 +21,7 @@ The app uses Supabase for authentication. To run locally:
 1. `cd frontend`
 2. Run `npm install`
 3.  set `VITE_API_BASE`=http://localhost:8082 in `frontend/.env` if you want to point to a remote backend
-4.. Start the frontend dev server:
+4. Start the frontend dev server:
    ```bash
    npm run dev
    ```
