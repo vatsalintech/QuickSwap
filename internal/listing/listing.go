@@ -1,4 +1,4 @@
-package listing
+package listings
 
 import (
 	"bytes"
