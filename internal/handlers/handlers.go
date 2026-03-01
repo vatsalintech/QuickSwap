@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/quickswap/quickswap/internal/auth"
-	// Import if CreateListingHandler is here
 )
 
 // NewRouter returns an http.Handler with all routes registered.
@@ -17,7 +16,7 @@ func NewRouter(c *auth.Client) http.Handler {
 	mux.HandleFunc("/api/profile", profileHandler(c))
 
 	// Register listing route
-	mux.HandleFunc("/api/createlisting", CreateListingHandler)
+mux.HandleFunc("/api/createlisting", createListingHandler(c))
 
 	return mux
 }
