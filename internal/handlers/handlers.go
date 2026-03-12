@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quickswap/quickswap/internal/auth"
+	"github.com/redis/go-redis/v9"
 )
 
 // NewRouter returns an http.Handler with auth routes registered.
-func NewRouter(c *auth.Client) http.Handler {
+func NewRouter(c *auth.Client, pg *pgxpool.Pool, rdb *redis.Client) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/auth/login", loginHandler(c))
 	mux.HandleFunc("/api/auth/signup", signupHandler(c))
