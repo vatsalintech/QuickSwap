@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/quickswap/quickswap/internal/auth"
 
-	listing "github.com/quickswap/quickswap/internal/listing"
+	listing "github.com/quickswap/quickswap/internal/listings"
 )
 
 func createListingHandler(authClient *auth.Client) http.HandlerFunc {
@@ -102,6 +103,92 @@ func createListingHandler(authClient *auth.Client) http.HandlerFunc {
 			"listing_id": id,
 			"status":     "success",
 			"message":    "Listing created successfully.",
+		})
+	}
+}
+
+// Handler to fetch all listings for the current logged-in user
+func myListingHandler(authClient *auth.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract and validate token
+		token := r.Header.Get("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+		if token == "" {
+			respondError(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Validate token by calling Supabase user endpoint
+		reqUser, _ := http.NewRequest("GET", os.Getenv("SUPABASE_URL")+"/auth/v1/user", nil)
+		reqUser.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+		reqUser.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(reqUser)
+
+		if err != nil {
+			respondError(w, "Failed to get user", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			respondError(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+
+		var userResp struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
+			respondError(w, "Invalid response from auth", http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(userResp)
+
+		// Query Supabase for listings by this user
+		supaURL := os.Getenv("SUPABASE_URL")
+		apiKey := os.Getenv("SUPABASE_SERVICE_KEY")
+		if apiKey == "" {
+			apiKey = os.Getenv("SUPABASE_ANON_KEY")
+		}
+		url := supaURL + "/rest/v1/listings?seller_id=eq." + userResp.ID
+		reqListings, _ := http.NewRequest("GET", url, nil)
+		reqListings.Header.Set("apikey", apiKey)
+		reqListings.Header.Set("Authorization", "Bearer "+apiKey)
+		reqListings.Header.Set("Content-Type", "application/json")
+
+		respListings, err := http.DefaultClient.Do(reqListings)
+		if err != nil {
+			respondError(w, "Failed to fetch listings", http.StatusInternalServerError)
+			return
+		}
+		defer respListings.Body.Close()
+
+		if respListings.StatusCode != http.StatusOK {
+			respondError(w, "Failed to fetch listings", http.StatusInternalServerError)
+			return
+		}
+
+		var listings []listing.Listing
+		if err := json.NewDecoder(respListings.Body).Decode(&listings); err != nil {
+			respondError(w, "Invalid listings response", http.StatusInternalServerError)
+			return
+		}
+
+		if len(listings) == 0 {
+			respondError(w, "No listings found", http.StatusNotFound)
+			return
+		}
+
+		respondJSON(w, map[string]interface{}{
+			"listings": listings,
 		})
 	}
 }
