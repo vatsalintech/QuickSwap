@@ -16,7 +16,7 @@ func NewRouter(c *auth.Client) http.Handler {
 	mux.HandleFunc("/api/profile", profileHandler(c))
 
 	// Register listing route
-mux.HandleFunc("/api/createlisting", createListingHandler(c))
-
+	mux.HandleFunc("/api/createlisting", createListingHandler(c))
+	mux.HandleFunc("/api/mylistings", myListingHandler(c))
 	return mux
 }

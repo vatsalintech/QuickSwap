@@ -5,11 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-
 	"github.com/joho/godotenv"
 	"github.com/quickswap/quickswap/internal/auth"
 	"github.com/quickswap/quickswap/internal/db"
 	"github.com/quickswap/quickswap/internal/handlers"
+
 )
 
 func main() {
