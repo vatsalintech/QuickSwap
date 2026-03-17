@@ -50,7 +50,7 @@ func main() {
 	http.Handle("/", fs)
 
 	// API routes
-	mux := handlers.NewRouter(authClient)
+	mux := handlers.NewRouter(authClient, pgPool, redisClient)
 	http.Handle("/api/", mux)
 
 	addr := ":8082"
