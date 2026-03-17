@@ -1,25 +1,26 @@
-/* Auth Theme Colors (CSS Variables) */
+/* Auth Theme Colors aligned with LandingPage */
 :root {
-  --auth-primary-blue: #2563EB;
-  --auth-primary-blue-hover: #1D4ED8;
-  --auth-accent-orange: #F97316;
-  --auth-background: #F9FAFB;
-  --auth-text: #111827;
-  --auth-subtle-gray: #E5E7EB;
-  --auth-success: #22C55E;
-  --auth-success-light: #DCFCE7;
-  --auth-error: #EF4444;
-  --auth-error-light: #FEE2E2;
-  --auth-warning: #F59E0B;
-  --auth-warning-light: #FEF3C7;
-  --auth-info: #3B82F6;
-  --auth-info-light: #DBEAFE;
-  --auth-secondary-text: #6B7280;
-  --auth-borders: #D1D5DB;
-  --auth-section-bg: #F3F4F6;
+  /* match landing page colors */
+  --auth-primary-blue: #2563eb;      /* same as --primary */
+  --auth-primary-blue-hover: #1d4ed8;
+  --auth-accent-orange: #f97316;     /* same as --accent */
+  --auth-background: #f9fafb;        /* same as --bg */
+  --auth-text: #111827;              /* same as --text */
+  --auth-subtle-gray: #e5e7eb;
+  --auth-success: #22c55e;
+  --auth-success-light: #dcfce7;
+  --auth-error: #ef4444;
+  --auth-error-light: #fee2e2;
+  --auth-warning: #f59e0b;
+  --auth-warning-light: #fef3c7;
+  --auth-info: #3b82f6;
+  --auth-info-light: #dbeafe;
+  --auth-secondary-text: #6b7280;    /* same as --muted */
+  --auth-borders: #d1d5db;          /* same as --border */
+  --auth-section-bg: #f3f4f6;       /* same as --bg-alt */
 }
 
-/* Auth Container */
+/* Auth Container – match landing layout */
 .auth-container {
   height: 100vh;
   background-color: var(--auth-background);
@@ -27,38 +28,43 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
 }
 
-/* Auth Paper */
+/* Card / Paper – similar to landing cards */
 .auth-paper {
-  padding: 20px 24px;
-  border-radius: 12px;
+  padding: 24px 28px;
+  border-radius: 18px;
   border: 1px solid var(--auth-borders);
-  background-color: #FFFFFF;
+  background: radial-gradient(circle at top left, #e5e7eb, #ffffff); /* subtle gray gradient */
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
 }
 
-/* Auth Button */
+/* Auth Button – match .btn.primary on landing */
 .auth-button {
   padding: 8px 16px;
   background-color: var(--auth-primary-blue);
-  color: #FFFFFF;
+  color: #ffffff;
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: none;
-  border-radius: 6px;
-  box-shadow: none;
+  border-radius: 999px;              /* pill shape like navbar buttons */
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
   border: none;
   cursor: pointer;
   width: 100%;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  transition: background-color 0.16s ease-out, box-shadow 0.16s ease-out,
+    transform 0.13s ease-out;
 }
 
 .auth-button:hover {
   background-color: var(--auth-primary-blue-hover);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
 }
 
-/* Auth Link */
+/* Auth Link – same blue as landing hover states */
 .auth-link {
   color: var(--auth-primary-blue);
   text-decoration: none;
@@ -69,7 +75,7 @@
   text-decoration: underline;
 }
 
-/* Text Field Styles */
+/* Text field styling aligned to landing’s subtle borders */
 .auth-textfield .MuiOutlinedInput-root fieldset {
   border-color: var(--auth-borders);
 }
@@ -103,7 +109,7 @@
   margin: 2px 0 0 0;
 }
 
-/* Auth Header */
+/* Header – similar typography to landing hero section */
 .auth-header {
   text-align: center;
   margin-bottom: 16px;
@@ -113,17 +119,19 @@
   font-weight: 700;
   color: var(--auth-text);
   margin-bottom: 4px;
+  letter-spacing: -0.02em;
 }
 
 .auth-subtitle {
   color: var(--auth-secondary-text);
+  font-size: 0.9rem;
 }
 
-/* Divider */
+/* Divider + footer keep existing but use shared colors */
 .auth-divider {
   display: flex;
   align-items: center;
-  margin: 8px 0;
+  margin: 8px 0 12px;
 }
 
 .auth-divider-line {
@@ -138,13 +146,14 @@
   font-size: 0.8rem;
 }
 
-/* Footer */
 .auth-footer {
   text-align: center;
+  margin-top: 4px;
 }
 
 .auth-footer-text {
   color: var(--auth-secondary-text);
+  font-size: 0.85rem;
 }
 
 /* Terms */
@@ -155,60 +164,35 @@
   margin-top: 12px;
 }
 
-/* Checkbox */
-.auth-checkbox .MuiCheckbox-root {
-  color: var(--auth-borders);
-}
-
-.auth-checkbox .MuiCheckbox-root.Mui-checked {
-  color: var(--auth-primary-blue);
-}
-
-.auth-checkbox .MuiFormControlLabel-label {
-  font-size: 0.85rem;
-  color: var(--auth-secondary-text);
-}
-
-/* Icon colors */
+/* Icon colors close to landing muted text */
 .auth-icon {
   color: var(--auth-secondary-text);
   font-size: 1.2rem;
 }
 
-/* Remember me row */
-.auth-remember-row {
+/* Form layout + spacing (already present) */
+.form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 16px;
+  margin: 1rem;
 }
 
-/* Forgot password link */
-.auth-forgot-link {
-  color: var(--auth-primary-blue);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
+/* Margin utilities (already in your file) */
+.mb-1 { margin-bottom: 8px; }
+.mb-1-5 { margin-bottom: 12px; }
+.mb-2 { margin-bottom: 16px; }
 
-.auth-forgot-link:hover {
-  text-decoration: underline;
-}
-
-/* Name row */
+/* Name row, remember row same as before */
 .auth-name-row {
   display: flex;
   gap: 12px;
   margin-bottom: 12px;
 }
 
-/* Margin utility classes */
-.mb-1 { margin-bottom: 8px; }
-.mb-1-5 { margin-bottom: 12px; }
-.mb-2 { margin-bottom: 16px; }
-.form{
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin: 1rem;
+.auth-remember-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
