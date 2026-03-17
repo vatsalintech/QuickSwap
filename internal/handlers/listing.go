@@ -176,19 +176,111 @@ func myListingHandler(authClient *auth.Client) http.HandlerFunc {
 			return
 		}
 
-		var listings []listing.Listing
-		if err := json.NewDecoder(respListings.Body).Decode(&listings); err != nil {
+		var listingsArr []listing.Listing
+		if err := json.NewDecoder(respListings.Body).Decode(&listingsArr); err != nil {
 			respondError(w, "Invalid listings response", http.StatusInternalServerError)
 			return
 		}
 
-		if len(listings) == 0 {
+		if len(listingsArr) == 0 {
 			respondError(w, "No listings found", http.StatusNotFound)
 			return
 		}
 
+		// Build response with required fields
+		type ListingSummary struct {
+			ListingID  string  `json:"listing_id"`
+			Title      string  `json:"title"`
+			Image      string  `json:"image"`
+			CurrentBid float64 `json:"current_bid"`
+			TimeLeft   string  `json:"time_left"`
+			TotalBids  int     `json:"total_bids"`
+			Status     string  `json:"status"`
+		}
+
+		var summaries []ListingSummary
+		for _, l := range listingsArr {
+			// Fetch bids for this listing
+			bidsURL := supaURL + "/rest/v1/bids?listing_id=eq." + l.ID
+			reqBids, _ := http.NewRequest("GET", bidsURL, nil)
+			reqBids.Header.Set("apikey", apiKey)
+			reqBids.Header.Set("Authorization", "Bearer "+apiKey)
+			reqBids.Header.Set("Content-Type", "application/json")
+
+			respBids, err := http.DefaultClient.Do(reqBids)
+			if err != nil || respBids.StatusCode != http.StatusOK {
+				respBids.Body.Close()
+				summaries = append(summaries, ListingSummary{
+					ListingID:  l.ID,
+					Title:      l.Title,
+					Image:      "",
+					CurrentBid: l.StartingBid,
+					TimeLeft:   "Ended",
+					TotalBids:  0,
+					Status:     "Ended",
+				})
+				continue
+			}
+			var bids []struct {
+				BidAmount float64 `json:"bid_amount"`
+			}
+			if err := json.NewDecoder(respBids.Body).Decode(&bids); err != nil {
+				respBids.Body.Close()
+				summaries = append(summaries, ListingSummary{
+					ListingID:  l.ID,
+					Title:      l.Title,
+					Image:      "",
+					CurrentBid: l.StartingBid,
+					TimeLeft:   "Ended",
+					TotalBids:  0,
+					Status:     "Ended",
+				})
+				continue
+			}
+			respBids.Body.Close()
+
+			// Calculate max bid
+			maxBid := l.StartingBid
+			for _, b := range bids {
+				if b.BidAmount > maxBid {
+					maxBid = b.BidAmount
+				}
+			}
+			totalBids := len(bids)
+
+			// Calculate time left
+			auctionEnd := l.AuctionEndTime
+			duration := time.Until(auctionEnd)
+			var timeLeft string
+			var status string
+			if duration > 0 {
+				hours := int(duration.Hours())
+				minutes := int(duration.Minutes()) % 60
+				timeLeft = fmt.Sprintf("%dh %dm", hours, minutes)
+				status = "Active"
+			} else {
+				timeLeft = "Ended"
+				status = "Ended"
+			}
+
+			image := ""
+			if len(l.Images) > 0 {
+				image = l.Images[0]
+			}
+
+			summaries = append(summaries, ListingSummary{
+				ListingID:  l.ID,
+				Title:      l.Title,
+				Image:      image,
+				CurrentBid: maxBid,
+				TimeLeft:   timeLeft,
+				TotalBids:  totalBids,
+				Status:     status,
+			})
+		}
+
 		respondJSON(w, map[string]interface{}{
-			"listings": listings,
+			"listings": summaries,
 		})
 	}
 }
