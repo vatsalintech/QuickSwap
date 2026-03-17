@@ -109,6 +109,16 @@
   margin: 2px 0 0 0;
 }
 
+.auth-back-text {
+  color: var(--auth-secondary-text);
+  font-size: 0.8rem;
+}
+
+.auth-back-icon {
+  color: var(--auth-secondary-text);
+  margin-right: 4px;
+}
+
 /* Header – similar typography to landing hero section */
 .auth-header {
   text-align: center;
