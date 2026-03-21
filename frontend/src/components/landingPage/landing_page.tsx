@@ -56,7 +56,7 @@ const LandingPage = () => {
   const handleStartSelling = () => {
     if (!isLoggedIn) {
       // not logged in → go to sign in
-      navigate("/auction");
+      navigate("/signin");
       return;
     }
     // logged in: later this can go to /sell; for now maybe /profile
