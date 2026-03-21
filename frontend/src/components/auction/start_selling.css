@@ -1,0 +1,246 @@
+/* start_selling.css */
+
+.sell-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  background-color: #f9fafb; /* same as auth/landing bg */
+  color: #111827;
+}
+
+.sell-back {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.85rem;
+  padding: 4px 0;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.sell-back:hover {
+  color: #111827;
+}
+
+.sell-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
+  gap: 24px;
+}
+
+/* Photos card */
+
+.sell-photos-card {
+  background: radial-gradient(circle at top left, #e5e7eb, #ffffff);
+  border-radius: 18px;
+  border: 1px solid #d1d5db;
+  padding: 16px 18px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+.sell-photos-card h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.sell-helper {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.sell-upload-area {
+  border-radius: 14px;
+  border: 1px dashed #d1d5db;
+  background-color: #f9fafb;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #4b5563;
+  text-align: center;
+}
+
+.sell-upload-area:hover {
+  background-color: #f3f4f6;
+}
+
+.sell-upload-icon {
+  font-size: 1.5rem;
+  color: #2563eb;
+}
+
+.sell-upload-sub {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.sell-photo-preview-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sell-photo-chip {
+  border-radius: 999px;
+  padding: 4px 10px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.sell-photo-more {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* Form card */
+
+.sell-form-card {
+  border-radius: 18px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+  padding: 18px 20px;
+}
+
+.sell-form-card h1 {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+}
+
+.sell-subtitle {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.sell-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sell-field-group label,
+.sell-two-column label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.sell-field-group input,
+.sell-field-group textarea,
+.sell-two-column input,
+.sell-two-column select,
+.sell-auction-card textarea,
+.sell-auction-card input {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.sell-field-group textarea,
+.sell-auction-card textarea {
+  border-radius: 14px;
+  resize: vertical;
+}
+
+.sell-field-group input:focus,
+.sell-field-group textarea:focus,
+.sell-two-column input:focus,
+.sell-two-column select:focus,
+.sell-auction-card input:focus,
+.sell-auction-card textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+.sell-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Auction settings */
+
+.sell-auction-card {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sell-auction-card h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.sell-inline-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sell-prefix {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Actions */
+
+.sell-actions {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sell-btn-primary {
+  border-radius: 999px;
+  border: 1px solid #2563eb;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 9px 16px;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transition: background-color 0.16s ease-out, box-shadow 0.16s ease-out,
+    transform 0.13s ease-out;
+}
+
+.sell-btn-primary:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+.sell-disclaimer {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Responsive */
+
+@media (max-width: 840px) {
+  .sell-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
