@@ -143,15 +143,37 @@ const ProfilePage = () => {
     <div className="profile-page">
       {/* Header/Navbar */}
       <header className="profile-navbar">
-        <div className="navbar-logo">
-          <span className="logo-text">Quickswap</span>
+        <div className="profile-navbar-left">
+          <button
+            className="profile-back-pill"
+            onClick={() => navigate("/")}
+          >
+            ← Back
+          </button>
+          <div className="navbar-logo">
+            <span className="logo-text">Quickswap</span>
+          </div>
         </div>
+
         <nav className="navbar-links">
-          <a href="#browse">Browse</a>
-          <a href="#sell">Sell</a>
-          <a href="#profile" className="active">
+          <button
+            className="navbar-link-button"
+            onClick={() => navigate("/")}
+          >
+            Browse
+          </button>
+          <button
+            className="navbar-link-button"
+            onClick={() => navigate("/start_selling")}
+          >
+            Sell
+          </button>
+          <button
+            className="navbar-link-button active"
+            onClick={() => navigate("/profile")}
+          >
             Profile
-          </a>
+          </button>
         </nav>
         <div className="navbar-actions">
           <button className="btn ghost-icon">
