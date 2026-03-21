@@ -1,0 +1,101 @@
+/* One strip section */
+.strip-section {
+  margin-bottom: 28px;
+}
+
+/* Header row for each strip */
+.strip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.strip-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+/* "Show all" link‑button */
+.strip-view-all {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.strip-view-all:hover {
+  text-decoration: underline;
+}
+
+/* HORIZONTAL scroll container */
+.strip-scroll {
+  display: flex;              /* key change: flex row */
+  gap: 12px;
+  overflow-x: auto;           /* horizontal scroll */
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.strip-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.strip-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.8);
+  border-radius: 999px;
+}
+
+.strip-scroll::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* Each card has fixed width so many can scroll horizontally */
+.strip-card {
+  flex: 0 0 220px;            /* fixed card width */
+  background-color: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+}
+
+.strip-image-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.strip-image-wrap img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  transition: transform 200ms ease-out;
+}
+
+.strip-card:hover img {
+  transform: scale(1.03);
+}
+
+.strip-body {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strip-body h3 {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.strip-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.86rem;
+}
