@@ -77,3 +77,62 @@ func EnsureAuctionCached(ctx context.Context, rdb *redis.Client, pg *pgxpool.Poo
 
 	return nil
 }
+
+// ProcessBidWithTx atomicly validates and processes a highest bid using Redis Optimistic Locking.
+func ProcessBidWithTx(ctx context.Context, rdb *redis.Client, auctionID string, userID string, amount float64) error {
+	priceKey := fmt.Sprintf("auction:%s:price", auctionID)
+	endTimeKey := fmt.Sprintf("auction:%s:end_time", auctionID)
+	highestBidderKey := fmt.Sprintf("auction:%s:highest_bidder", auctionID)
+
+	const maxRetries = 100
+
+	txf := func(tx *redis.Tx) error {
+		// Read end_time
+		endTimeUnix, err := tx.Get(ctx, endTimeKey).Int64()
+		if err == nil {
+			if time.Now().Unix() > endTimeUnix {
+				return fmt.Errorf("Auction Ended: current time is past auction end time")
+			}
+		} else if err != redis.Nil {
+			return fmt.Errorf("redis error getting end_time: %w", err)
+		}
+
+		// Read current price
+		currentPrice, err := tx.Get(ctx, priceKey).Float64()
+		if err == nil {
+			if amount <= currentPrice {
+				return fmt.Errorf("Bid Too Low: amount must be greater than current price")
+			}
+		} else if err != redis.Nil {
+			return fmt.Errorf("redis error getting price: %w", err)
+		} else if err == redis.Nil {
+			// If price doesn't exist, we could reject or just continue. 
+			// We continue assuming amount > 0.
+			if amount <= 0 {
+				return fmt.Errorf("Bid Too Low: amount must be greater than current price")
+			}
+		}
+
+		// Execution: Create a pipeline
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			pipe.Set(ctx, priceKey, amount, 0)
+			pipe.Set(ctx, highestBidderKey, userID, 0)
+			return nil
+		})
+
+		return err
+	}
+
+	for i := 0; i < maxRetries; i++ {
+		err := rdb.Watch(ctx, txf, priceKey)
+		if err == nil {
+			return nil
+		}
+		if err == redis.TxFailedErr {
+			continue // Retry on race condition
+		}
+		return err
+	}
+
+	return fmt.Errorf("reached maximum number of retries processing bid")
+}
