@@ -456,34 +456,19 @@ const ProfilePage = () => {
         {activeTab === "settings" && (
           <div className="settings-container">
             <div className="settings-section">
-              <h2>Account Settings</h2>
-              <div className="settings-group">
-                <label>First Name</label>
-                <input type="text" defaultValue={user.first_name || ""} />
-              </div>
-              <div className="settings-group">
-                <label>Last Name</label>
-                <input type="text" defaultValue={user.last_name || ""} />
-              </div>
-              <div className="settings-group">
-                <label>Email address</label>
-                <input type="email" defaultValue={user.email || ""} />
-              </div>
-              <div className="settings-group">
-                <label>Phone number</label>
-                <input type="tel" defaultValue={user.mobile || ""} />
-              </div>
-              <div className="settings-group">
-                <label>Location</label>
-                <input type="text" defaultValue="Gainesville, FL" />
-              </div>
-              <button className="btn primary">Save changes</button>
-            </div>
-            <div className="settings-section">
               <h2>Privacy & Security</h2>
-              <div className="settings-group">
+              <div className="settings-group inline">
                 <label>Change password</label>
                 <button className="btn ghost">Update password</button>
+              </div>
+              <div className="settings-group inline" style={{ marginBottom: 0 }}>
+                <label style={{ color: "var(--error)" }}>Delete account</label>
+                <button 
+                  className="btn ghost" 
+                  style={{ color: "var(--error)", borderColor: "var(--error-soft)" }}
+                >
+                  Delete account
+                </button>
               </div>
             </div>
           </div>

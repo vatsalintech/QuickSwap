@@ -537,6 +537,16 @@ body {
   border-color: var(--primary);
 }
 
+.settings-group.inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-group.inline label {
+  margin-bottom: 0;
+}
+
 .settings-toggle {
   display: flex;
   justify-content: space-between;
