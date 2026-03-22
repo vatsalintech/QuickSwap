@@ -87,12 +87,31 @@
 }
 
 .sell-photo-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   border-radius: 999px;
   padding: 4px 10px;
   border: 1px solid #e5e7eb;
   background-color: #ffffff;
   font-size: 0.78rem;
   color: #4b5563;
+}
+
+.sell-photo-remove {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sell-photo-remove:hover {
+  color: #b91c1c;
 }
 
 .sell-photo-more {
@@ -129,7 +148,8 @@
 }
 
 .sell-field-group label,
-.sell-two-column label {
+.sell-two-column label,
+.sell-auction-card label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -153,7 +173,8 @@
 .sell-field-group textarea,
 .sell-auction-card textarea {
   border-radius: 14px;
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
 }
 
 .sell-field-group input:focus,
@@ -188,6 +209,11 @@
 .sell-auction-card h2 {
   margin: 0;
   font-size: 1rem;
+}
+
+.sell-auction-card input[type="datetime-local"] {
+  align-self: flex-start;
+  padding: 8px 14px;
 }
 
 .sell-inline-input {
