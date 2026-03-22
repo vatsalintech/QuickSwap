@@ -153,7 +153,27 @@ const Signup: React.FC = () => {
           'accessTokenExpiry',
           (Date.now() + expires_in * 1000).toString()
         );
-        localStorage.setItem('user', JSON.stringify(user));
+
+        const profileUrl = apiBase
+          ? `${apiBase.replace(/\/$/, '')}/api/profile`
+          : '/api/profile';
+
+        try {
+          const profileRes = await fetch(profileUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${access_token}`
+            }
+          });
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            localStorage.setItem('user', JSON.stringify(profileData));
+          } else {
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        } catch (err) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
 
         window.location.href = '/dashboard';
         return;
