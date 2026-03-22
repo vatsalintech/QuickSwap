@@ -117,6 +117,9 @@ func ProcessBidWithTx(ctx context.Context, rdb *redis.Client, auctionID string, 
 		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 			pipe.Set(ctx, priceKey, amount, 0)
 			pipe.Set(ctx, highestBidderKey, userID, 0)
+
+			participantsKey := fmt.Sprintf("auction:%s:participants", auctionID)
+			pipe.SAdd(ctx, participantsKey, userID)
 			return nil
 		})
 
