@@ -311,8 +311,7 @@ const ProfilePage = () => {
           </div>
         </div>
         <div className="profile-actions">
-          <button className="btn ghost" onClick={handleEditOpen}>Edit profile</button>
-          <button className="btn primary">Create listing</button>
+          {/* Actions moved to tabs */}
         </div>
       </section>
 
@@ -455,6 +454,14 @@ const ProfilePage = () => {
 
         {activeTab === "settings" && (
           <div className="settings-container">
+            <div className="settings-section">
+              <h2>Account Details</h2>
+              <div className="settings-group inline" style={{ marginBottom: 0 }}>
+                <label>Personal information</label>
+                <button className="btn ghost" onClick={handleEditOpen}>Edit profile</button>
+              </div>
+            </div>
+            
             <div className="settings-section">
               <h2>Privacy & Security</h2>
               <div className="settings-group inline">
