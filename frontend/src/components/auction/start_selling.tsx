@@ -53,6 +53,8 @@ const StartSelling: React.FC = () => {
   });
 
   const [photos, setPhotos] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string>("");
 
   const handleChange =
     (field: keyof StartSellingForm) =>
@@ -70,19 +72,129 @@ const StartSelling: React.FC = () => {
 
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const files = Array.from(e.target.files);
-    setPhotos(files);
+    const newFiles = Array.from(e.target.files);
+    setPhotos((prev) => {
+      const combined = [...prev, ...newFiles];
+      return combined.slice(0, 6); // Max 6 images
+    });
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    // For now, just log. Later: POST to backend.
-    console.log("New auction listing:", {
-      ...form,
-      photosCount: photos.length,
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Helper to get current datetime in YYYY-MM-DDTHH:mm to block past selections
+  const getMinDateTime = () => {
+    const now = new Date();
+    // Offset by local timezone to correctly format the HTML datetime-local constraint natively block
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  };
+
+  // Convert File objects to base64 strings for API
+  const convertPhotosToBase64 = async (files: File[]): Promise<string[]> => {
+    const promises = files.map((file) => {
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     });
-    // Example: navigate to a confirmation or preview page
-    // navigate("/auction/preview");
+    return Promise.all(promises);
+  };
+
+  // Convert datetime-local to RFC3339 format (what Go expects)
+  const formatDateTimeToRFC3339 = (dateTimeLocal: string): string => {
+    if (!dateTimeLocal) return "";
+    const date = new Date(dateTimeLocal);
+    if (isNaN(date.getTime())) {
+      throw new Error("Invalid date format");
+    }
+    return date.toISOString();
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error("Authentication required. Please log in.");
+      }
+
+      if (!form.title.trim() || !form.description.trim() || !form.category || !form.endTime || !form.locationCity.trim()) {
+        throw new Error("Please fill out all required fields.");
+      }
+      if (!form.startingBid || parseFloat(form.startingBid) <= 0) {
+        throw new Error("Starting bid must be greater than 0");
+      }
+      if (photos.length === 0) {
+        throw new Error("At least one photo is required");
+      }
+
+      const images = await convertPhotosToBase64(photos);
+
+      const requestBody: any = {
+        title: form.title.trim(),
+        subtitle: form.subtitle.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        subcategory: form.subcategory || "",
+        condition: form.condition,
+        brand: form.brand.trim(),
+        color: form.color.trim(),
+        size: form.size.trim(),
+        images: images,
+        starting_bid: parseFloat(form.startingBid),
+        auction_start_time: form.startTime ? formatDateTimeToRFC3339(form.startTime) : new Date().toISOString(),
+        auction_end_time: formatDateTimeToRFC3339(form.endTime),
+        location: form.locationCity.trim(),
+        notes: form.pickupNotes.trim(),
+      };
+
+      if (form.buyNowPrice && parseFloat(form.buyNowPrice) > 0) {
+        requestBody.buy_now_price = parseFloat(form.buyNowPrice);
+      }
+
+      const rawApiBase = (import.meta.env.VITE_API_BASE as string) || '';
+      const apiBase = rawApiBase.replace(/['"]+/g, '').trim();
+      const listingsUrl = apiBase ? `${apiBase.replace(/\/$/, '')}/api/createlisting` : '/api/createlisting';
+
+      const response = await fetch(listingsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const contentType = response.headers.get("content-type");
+      let data: any = {};
+      
+      if (contentType && contentType.toLowerCase().includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textData = await response.text();
+        throw new Error(`Server returned non-JSON response (${response.status}): ${textData.substring(0, 100)}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || `Failed to create listing (${response.status})`);
+      }
+
+      alert(`Listing created successfully!`);
+      navigate('/profile');
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while creating the listing');
+      console.error('Error creating listing:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const subcategoryOptions =
@@ -111,6 +223,7 @@ const StartSelling: React.FC = () => {
               multiple
               onChange={handlePhotoChange}
               style={{ display: "none" }}
+              disabled={isSubmitting}
             />
             <span className="sell-upload-icon">＋</span>
             <span>Click to upload or drag and drop</span>
@@ -121,14 +234,12 @@ const StartSelling: React.FC = () => {
 
           {photos.length > 0 && (
             <div className="sell-photo-preview-row">
-              {photos.slice(0, 4).map((file, idx) => (
+              {photos.map((file, idx) => (
                 <div key={idx} className="sell-photo-chip">
                   <span className="sell-photo-name">{file.name}</span>
+                  <button type="button" onClick={() => removePhoto(idx)} className="sell-photo-remove" disabled={isSubmitting}>✕</button>
                 </div>
               ))}
-              {photos.length > 4 && (
-                <div className="sell-photo-more">+{photos.length - 4} more</div>
-              )}
             </div>
           )}
         </section>
@@ -140,6 +251,20 @@ const StartSelling: React.FC = () => {
             Describe your item, set a starting bid, and choose when the auction runs.
           </p>
 
+          {error && (
+            <div style={{ 
+              color: 'red', 
+              marginBottom: '1rem', 
+              padding: '0.75rem', 
+              border: '1px solid #ff6b6b', 
+              borderRadius: '4px', 
+              backgroundColor: '#ffebee',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+
           <form className="sell-form" onSubmit={handleSubmit}>
             {/* Basic info */}
             <div className="sell-field-group">
@@ -150,6 +275,7 @@ const StartSelling: React.FC = () => {
                   value={form.title}
                   onChange={handleChange("title")}
                   placeholder="e.g. Wooden dining table · seats 4"
+                  disabled={isSubmitting}
                   required
                 />
               </label>
@@ -161,6 +287,7 @@ const StartSelling: React.FC = () => {
                   value={form.subtitle}
                   onChange={handleChange("subtitle")}
                   placeholder="e.g. Solid oak, includes 4 matching chairs"
+                  disabled={isSubmitting}
                 />
               </label>
 
@@ -171,6 +298,10 @@ const StartSelling: React.FC = () => {
                   onChange={handleChange("description")}
                   placeholder="Describe condition, dimensions, what's included, and anything a buyer should know."
                   rows={4}
+                  maxLength={2000}
+                  style={{ resize: "none", overflowY: "auto" }}
+                  disabled={isSubmitting}
+                  required
                 />
               </label>
             </div>
@@ -182,6 +313,7 @@ const StartSelling: React.FC = () => {
                 <select
                   value={form.category}
                   onChange={handleChange("category")}
+                  disabled={isSubmitting}
                   required
                 >
                   <option value="">Select category</option>
@@ -199,7 +331,7 @@ const StartSelling: React.FC = () => {
                 <select
                   value={form.subcategory}
                   onChange={handleChange("subcategory")}
-                  disabled={!form.category}
+                  disabled={!form.category || isSubmitting}
                   required
                 >
                   <option value="">
@@ -221,6 +353,7 @@ const StartSelling: React.FC = () => {
                 <select
                   value={form.condition}
                   onChange={handleChange("condition")}
+                  disabled={isSubmitting}
                 >
                   <option value="new">New / with tags</option>
                   <option value="like_new">Like new</option>
@@ -236,6 +369,7 @@ const StartSelling: React.FC = () => {
                   value={form.brand}
                   onChange={handleChange("brand")}
                   placeholder="e.g. Apple, Nike, IKEA"
+                  disabled={isSubmitting}
                 />
               </label>
             </div>
@@ -248,6 +382,7 @@ const StartSelling: React.FC = () => {
                   value={form.color}
                   onChange={handleChange("color")}
                   placeholder="e.g. black, blue, oak"
+                  disabled={isSubmitting}
                 />
               </label>
 
@@ -258,6 +393,7 @@ const StartSelling: React.FC = () => {
                   value={form.size}
                   onChange={handleChange("size")}
                   placeholder="e.g. M, 42, Queen, 256GB"
+                  disabled={isSubmitting}
                 />
               </label>
             </div>
@@ -270,6 +406,8 @@ const StartSelling: React.FC = () => {
                   value={form.locationCity}
                   onChange={handleChange("locationCity")}
                   placeholder="e.g. Gainesville, FL"
+                  disabled={isSubmitting}
+                  required
                 />
               </label>
             </div>
@@ -290,6 +428,7 @@ const StartSelling: React.FC = () => {
                       value={form.startingBid}
                       onChange={handleChange("startingBid")}
                       placeholder="e.g. 50"
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -306,6 +445,7 @@ const StartSelling: React.FC = () => {
                       value={form.buyNowPrice}
                       onChange={handleChange("buyNowPrice")}
                       placeholder="Leave empty if not needed"
+                      disabled={isSubmitting}
                     />
                   </div>
                 </label>
@@ -318,7 +458,8 @@ const StartSelling: React.FC = () => {
                     type="datetime-local"
                     value={form.startTime}
                     onChange={handleChange("startTime")}
-                    required
+                    min={getMinDateTime()}
+                    disabled={isSubmitting}
                   />
                 </label>
 
@@ -328,6 +469,8 @@ const StartSelling: React.FC = () => {
                     type="datetime-local"
                     value={form.endTime}
                     onChange={handleChange("endTime")}
+                    min={form.startTime || getMinDateTime()}
+                    disabled={isSubmitting}
                     required
                   />
                 </label>
@@ -340,13 +483,14 @@ const StartSelling: React.FC = () => {
                   onChange={handleChange("pickupNotes")}
                   placeholder="e.g. Local pickup only. Cash or digital payments accepted."
                   rows={3}
+                  disabled={isSubmitting}
                 />
               </label>
             </div>
 
             <div className="sell-actions">
-              <button type="submit" className="sell-btn-primary">
-                Publish auction
+              <button type="submit" className="sell-btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? "Publishing..." : "Publish auction"}
               </button>
               <p className="sell-disclaimer">
                 Your auction will go live at the chosen start time. You’ll be notified when new bids come in.
