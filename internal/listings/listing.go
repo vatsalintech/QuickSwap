@@ -10,16 +10,24 @@ import (
 )
 
 type Listing struct {
-	ID             string    `json:"id,omitempty"`
-	Title          string    `json:"title"`
-	Description    string    `json:"description"`
-	Category       string    `json:"category"`
-	Images         []string  `json:"images"`
-	StartingBid    float64   `json:"starting_bid"`
-	BuyNowPrice    *float64  `json:"buy_now_price,omitempty"`
-	AuctionEndTime time.Time `json:"auction_end_time"`
-	Location       string    `json:"location"`
-	SellerID       string    `json:"seller_id"`
+	ID               string    `json:"id,omitempty"`
+	Title            string    `json:"title"`
+	Subtitle         string    `json:"subtitle"`
+	Description      string    `json:"description"`
+	Category         string    `json:"category"`
+	Subcategory      string    `json:"subcategory"`
+	Condition        string    `json:"condition"`
+	Brand            string    `json:"brand"`
+	Color            string    `json:"color"`
+	Size             string    `json:"size"`
+	Images           []string  `json:"images"`
+	StartingBid      float64   `json:"starting_bid"`
+	BuyNowPrice      *float64  `json:"buy_now_price,omitempty"`
+	AuctionStartTime time.Time `json:"auction_start_time"`
+	AuctionEndTime   time.Time `json:"auction_end_time"`
+	Location         string    `json:"location"`
+	Notes            string    `json:"notes"`
+	SellerID         string    `json:"seller_id"`
 }
 
 // CreateListing inserts a new listing into the Supabase listings table.

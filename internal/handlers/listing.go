@@ -55,21 +55,31 @@ func createListingHandler(authClient *auth.Client) http.HandlerFunc {
 		}
 
 		// Parse and validate request body
+
 		var req struct {
-			Title          string   `json:"title"`
-			Description    string   `json:"description"`
-			Category       string   `json:"category"`
-			Images         []string `json:"images"`
-			StartingBid    float64  `json:"starting_bid"`
-			BuyNowPrice    *float64 `json:"buy_now_price,omitempty"`
-			AuctionEndTime string   `json:"auction_end_time"`
-			Location       string   `json:"location"`
+			Title            string   `json:"title"`
+			Subtitle         string   `json:"subtitle"`
+			Description      string   `json:"description"`
+			Category         string   `json:"category"`
+			Subcategory      string   `json:"subcategory"`
+			Condition        string   `json:"condition"`
+			Brand            string   `json:"brand"`
+			Color            string   `json:"color"`
+			Size             string   `json:"size"`
+			Images           []string `json:"images"`
+			StartingBid      float64  `json:"starting_bid"`
+			BuyNowPrice      *float64 `json:"buy_now_price,omitempty"`
+			AuctionStartTime string   `json:"auction_start_time"`
+			AuctionEndTime   string   `json:"auction_end_time"`
+			Location         string   `json:"location"`
+			Notes            string   `json:"notes"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			respondError(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
 
+		// Validate required fields
 		if req.Title == "" || req.Description == "" || req.Category == "" || len(req.Images) == 0 || req.StartingBid == 0 || req.AuctionEndTime == "" || req.Location == "" {
 			respondError(w, "Missing required fields", http.StatusBadRequest)
 			return
@@ -81,16 +91,33 @@ func createListingHandler(authClient *auth.Client) http.HandlerFunc {
 			return
 		}
 
+		var auctionStart time.Time
+		if req.AuctionStartTime != "" {
+			auctionStart, err = time.Parse(time.RFC3339, req.AuctionStartTime)
+			if err != nil {
+				respondError(w, "Invalid auction_start_time format (must be RFC3339)", http.StatusBadRequest)
+				return
+			}
+		}
+
 		l := &listing.Listing{
-			Title:          req.Title,
-			Description:    req.Description,
-			Category:       req.Category,
-			Images:         req.Images,
-			StartingBid:    req.StartingBid,
-			BuyNowPrice:    req.BuyNowPrice,
-			AuctionEndTime: auctionEnd,
-			Location:       req.Location,
-			SellerID:       userResp.ID, // Use ID from token
+			Title:            req.Title,
+			Subtitle:         req.Subtitle,
+			Description:      req.Description,
+			Category:         req.Category,
+			Subcategory:      req.Subcategory,
+			Condition:        req.Condition,
+			Brand:            req.Brand,
+			Color:            req.Color,
+			Size:             req.Size,
+			Images:           req.Images,
+			StartingBid:      req.StartingBid,
+			BuyNowPrice:      req.BuyNowPrice,
+			AuctionStartTime: auctionStart,
+			AuctionEndTime:   auctionEnd,
+			Location:         req.Location,
+			Notes:            req.Notes,
+			SellerID:         userResp.ID, // Use ID from token
 		}
 
 		id, err := listing.CreateListing(l)
