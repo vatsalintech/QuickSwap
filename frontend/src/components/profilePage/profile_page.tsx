@@ -3,22 +3,25 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./profile_page.css";
 
-interface MeResponse {
+interface ProfileResponse {
   id: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
+  mobile?: string;
 }
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<"listings" | "bids" | "settings">("listings");
-  const [user, setUser] = useState<MeResponse | null>(null);
+  const [user, setUser] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
-  // Fetch current user from backend
+  // Fetch current user from localStorage
   useEffect(() => {
-    const fetchMe = async () => {
+    const loadUser = () => {
       try {
         const token = localStorage.getItem("accessToken");
         if (!token) {
@@ -27,36 +30,25 @@ const ProfilePage = () => {
           return;
         }
 
-        const apiBase = (import.meta.env.VITE_API_BASE as string) || "";
-        const meUrl = apiBase
-          ? `${apiBase.replace(/\/$/, "")}/api/auth/me`
-          : "/api/auth/me";
-
-        const res = await fetch(meUrl, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          // e.g. 401 invalid/expired token
-          setError("Session expired");
+        const userStr = localStorage.getItem("user");
+        if (!userStr) {
+          setError("User data not found in local storage.");
           navigate("/signin");
           return;
         }
 
-        const data: MeResponse = await res.json();
+        const data: ProfileResponse = JSON.parse(userStr);
         setUser(data);
       } catch (err: any) {
-        console.error("Failed to fetch /me:", err);
+        console.error("Failed to parse user from local storage:", err);
         setError("Failed to load profile");
+        navigate("/signin");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMe();
+    loadUser();
   }, [navigate]);
 
   const userListings = [
@@ -135,9 +127,10 @@ const ProfilePage = () => {
     return <div className="profile-page">Unable to load profile.</div>;
   }
 
-  // Derive a display name from email for now
-  const displayName = user.email.split("@")[0]; // e.g., vatsal.shah -> "vatsal.shah"
-  const username = `@${displayName}`;
+  const displayName = user.first_name && user.last_name
+    ? `${user.first_name} ${user.last_name}`
+    : user.email.split("@")[0];
+  const userEmail = user.email;
 
   return (
     <div className="profile-page">
@@ -214,10 +207,7 @@ const ProfilePage = () => {
           </div>
           <div className="profile-info">
             <h1>{displayName}</h1>
-            <p className="profile-username">{username}</p>
-            <p className="profile-bio">
-              Tech-Enthusiast | Gainesville, Florida
-            </p>
+            <p className="profile-username">{userEmail}</p>
           </div>
           <div className="profile-stats">
             <div className="stat">
@@ -382,12 +372,20 @@ const ProfilePage = () => {
             <div className="settings-section">
               <h2>Account Settings</h2>
               <div className="settings-group">
+                <label>First Name</label>
+                <input type="text" defaultValue={user.first_name || ""} />
+              </div>
+              <div className="settings-group">
+                <label>Last Name</label>
+                <input type="text" defaultValue={user.last_name || ""} />
+              </div>
+              <div className="settings-group">
                 <label>Email address</label>
-                <input type="email" defaultValue={user.email} />
+                <input type="email" defaultValue={user.email || ""} />
               </div>
               <div className="settings-group">
                 <label>Phone number</label>
-                <input type="tel" defaultValue="+1 (352) 555-0123" />
+                <input type="tel" defaultValue={user.mobile || ""} />
               </div>
               <div className="settings-group">
                 <label>Location</label>
