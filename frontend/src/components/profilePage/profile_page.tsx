@@ -17,6 +17,40 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Modal State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: "",
+    last_name: "",
+    mobile: "",
+  });
+
+  const handleEditOpen = () => {
+    if (user) {
+      setEditForm({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        mobile: user.mobile || "",
+      });
+      setIsEditingProfile(true);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Mock saving profile to backend:", editForm);
+    // TODO: the backend route PUT /api/profile needs to be built.
+    
+    // Simulate successful backend save by updating local structures
+    if (user) {
+      const updatedUser = { ...user, ...editForm };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+    
+    setIsEditingProfile(false);
+  };
+
   const navigate = useNavigate();
 
   // Fetch current user from localStorage
@@ -134,6 +168,58 @@ const ProfilePage = () => {
 
   return (
     <div className="profile-page">
+      {/* Edit Profile Modal Overlay */}
+      {isEditingProfile && (
+        <div className="edit-profile-modal-overlay">
+          <div className="edit-profile-modal-content">
+            <h2>Edit Profile</h2>
+            <form onSubmit={handleEditSubmit} className="edit-profile-form">
+              <div className="settings-group">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  value={editForm.first_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, first_name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="settings-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  value={editForm.last_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, last_name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="settings-group">
+                <label>Phone number</label>
+                <input
+                  type="tel"
+                  value={editForm.mobile}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, mobile: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="settings-group">
+                <label>Email address</label>
+                <input
+                  type="email"
+                  value={user?.email || ""}
+                  disabled
+                  className="disabled-input"
+                />
+              </div>
+              
+              <div className="edit-profile-actions">
+                <button type="button" className="btn ghost" onClick={() => setIsEditingProfile(false)}>Cancel</button>
+                <button type="submit" className="btn primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header/Navbar */}
       <header className="profile-navbar">
         <div className="profile-navbar-left">
@@ -225,7 +311,7 @@ const ProfilePage = () => {
           </div>
         </div>
         <div className="profile-actions">
-          <button className="btn ghost">Edit profile</button>
+          <button className="btn ghost" onClick={handleEditOpen}>Edit profile</button>
           <button className="btn primary">Create listing</button>
         </div>
       </section>
