@@ -2,10 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Signup from './components/authenticate/Signup'
 import Signin from './components/authenticate/Signin'
 import LandingPage from './components/landingPage/landing_page'
-import ProfilePage from './components/profilePage/profile_page'
 import AuctionDetail from './components/auction/auction_detail'
 import StartSelling from './components/auction/start_selling'
 import LoggedInLandingPage from "./components/landingPage/loggedin_landing_page";
+import ProfilePage from './components/profilePage/ProfilePage'
 
 function App() {
   const isLoggedIn = !!localStorage.getItem("user");
@@ -17,7 +17,6 @@ function App() {
           path="/"
           element={isLoggedIn ? <LoggedInLandingPage /> : <LandingPage />}
         />
-        console.log("App isLoggedIn", isLoggedIn)
 
         <Route path="/signin" element={<Signin />} />
         <Route path="/signup" element={<Signup />} />
