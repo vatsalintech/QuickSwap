@@ -19,13 +19,12 @@ type Bid struct {
 	Status      string  `json:"status"`
 	IsAutoBid   bool    `json:"is_auto_bid"`
 	BidSequence int     `json:"bid_sequence"`
-	// Listing details
-	Title      string  `json:"title"`
-	Image      string  `json:"image"`
-	CurrentBid float64 `json:"current_bid"`
-	AuctionEnd string  `json:"auction_end_time"`
-	TimeLeft   string  `json:"time_left"`
-	Label      string  `json:"label"`
+	Title       string  `json:"title"`
+	Image       string  `json:"image"`
+	CurrentBid  float64 `json:"current_bid"`
+	AuctionEnd  string  `json:"auction_end_time"`
+	TimeLeft    string  `json:"time_left"`
+	Label       string  `json:"label"`
 }
 
 func myBidsHandler(authClient *auth.Client) http.HandlerFunc {
@@ -155,6 +154,131 @@ func myBidsHandler(authClient *auth.Client) http.HandlerFunc {
 
 		respondJSON(w, map[string]interface{}{
 			"bids": bids,
+		})
+	}
+}
+
+// TopListingsHandler fetches listings for trending now, ending soon, and starting soon
+func topListingsHandler(authClient *auth.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		supaURL := os.Getenv("SUPABASE_URL")
+		apiKey := os.Getenv("SUPABASE_SERVICE_KEY")
+		if apiKey == "" {
+			apiKey = os.Getenv("SUPABASE_ANON_KEY")
+		}
+
+		url := supaURL + "/rest/v1/listings?select=*&order=auction_end_time.asc"
+		reqListings, _ := http.NewRequest("GET", url, nil)
+		reqListings.Header.Set("apikey", apiKey)
+		reqListings.Header.Set("Authorization", "Bearer "+apiKey)
+		reqListings.Header.Set("Content-Type", "application/json")
+
+		respListings, err := http.DefaultClient.Do(reqListings)
+		if err != nil || respListings.StatusCode != http.StatusOK {
+			respondError(w, "Failed to fetch listings", http.StatusInternalServerError)
+			return
+		}
+		defer respListings.Body.Close()
+
+		var listings []struct {
+			ID           string   `json:"id"`
+			Title        string   `json:"title"`
+			Subtitle     string   `json:"subtitle"`
+			Images       []string `json:"images"`
+			StartingBid  float64  `json:"starting_bid"`
+			AuctionStart string   `json:"auction_start_time"`
+			AuctionEnd   string   `json:"auction_end_time"`
+		}
+		if err := json.NewDecoder(respListings.Body).Decode(&listings); err != nil {
+			respondError(w, "Invalid listings response", http.StatusInternalServerError)
+			return
+		}
+
+		now := time.Now().UTC()
+		var trending, endingSoon, startingSoon []map[string]interface{}
+
+		for _, l := range listings {
+			// Fetch top bid for this listing
+			bidsURL := supaURL + "/rest/v1/bids?listing_id=eq." + l.ID + "&order=bid_amount.desc&limit=1"
+			reqBids, _ := http.NewRequest("GET", bidsURL, nil)
+			reqBids.Header.Set("apikey", apiKey)
+			reqBids.Header.Set("Authorization", "Bearer "+apiKey)
+			reqBids.Header.Set("Content-Type", "application/json")
+
+			respBids, err := http.DefaultClient.Do(reqBids)
+			if err != nil || respBids.StatusCode != http.StatusOK {
+				continue
+			}
+			var bids []struct {
+				BidAmount float64 `json:"bid_amount"`
+			}
+			if err := json.NewDecoder(respBids.Body).Decode(&bids); err != nil {
+				respBids.Body.Close()
+				continue
+			}
+			respBids.Body.Close()
+
+			currentBid := l.StartingBid
+			if len(bids) > 0 {
+				currentBid = bids[0].BidAmount
+			}
+
+			auctionEnd, _ := time.Parse(time.RFC3339, l.AuctionEnd)
+			auctionStart, _ := time.Parse(time.RFC3339, l.AuctionStart)
+
+			card := map[string]interface{}{
+				"id":                 l.ID,
+				"title":              l.Title,
+				"subtitle":           l.Subtitle,
+				"image":              "",
+				"current_bid":        currentBid,
+				"auction_end_time":   l.AuctionEnd,
+				"auction_start_time": l.AuctionStart,
+			}
+			if len(l.Images) > 0 {
+				card["image"] = l.Images[0]
+			}
+
+			// Trending: highest current bid (top N)
+			// Ending soon: auction_end_time within next 1 hour
+			// Starting soon: auction_start_time within next 1 hour and not started yet
+			if auctionEnd.After(now) && auctionEnd.Before(now.Add(1*time.Hour)) {
+				endingSoon = append(endingSoon, card)
+			} else if auctionStart.After(now) && auctionStart.Before(now.Add(1*time.Hour)) {
+				startingSoon = append(startingSoon, card)
+			} else if auctionEnd.After(now) {
+				trending = append(trending, card)
+			}
+		}
+
+		// Sort trending by current_bid descending
+		// (Simple bubble sort for brevity, use sort.Slice in production)
+		for i := 0; i < len(trending); i++ {
+			for j := i + 1; j < len(trending); j++ {
+				if trending[j]["current_bid"].(float64) > trending[i]["current_bid"].(float64) {
+					trending[i], trending[j] = trending[j], trending[i]
+				}
+			}
+		}
+		if len(trending) > 5 {
+			trending = trending[:5]
+		}
+		if len(endingSoon) > 5 {
+			endingSoon = endingSoon[:5]
+		}
+		if len(startingSoon) > 5 {
+			startingSoon = startingSoon[:5]
+		}
+
+		respondJSON(w, map[string]interface{}{
+			"trending_now":  trending,
+			"ending_soon":   endingSoon,
+			"starting_soon": startingSoon,
 		})
 	}
 }
