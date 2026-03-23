@@ -1,55 +1,105 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../landingPage/loggedin_landing_page.css"; 
 
-// For now static, later you can fetch these
-const trendingMock = [
-  {
-    id: 1,
-    name: "Sony WH‑1000XM5 Wireless Headphones",
-    price: "Current bid: $245",
-    image:
-      "https://images.pexels.com/photos/3394664/pexels-photo-3394664.jpeg?auto=compress&cs=tinysrgb&w=600",
-    tag: "Hot",
-  },
-  {
-    id: 2,
-    name: "MacBook Air M2 · 13‑inch",
-    price: "Current bid: $910",
-    image:
-      "https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=600",
-    tag: "Trending",
-  },
-  // add a few more so the scroll feels real
-];
+interface TopListingApiItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  current_bid: number;
+  auction_start_time: string;
+  auction_end_time: string;
+}
 
-const endingSoonMock = [
-  {
-    id: 3,
-    name: "Mechanical keyboard · 3 min left",
-    price: "Current bid: $102",
-    image:
-      "https://images.pexels.com/photos/1714208/pexels-photo-1714208.jpeg?auto=compress&cs=tinysrgb&w=600",
-    tag: "Ending soon",
-  },
-  // ...
-];
+interface TopListingsResponse {
+  ending_soon: TopListingApiItem[] | null;
+  starting_soon: TopListingApiItem[] | null;
+  trending_now: TopListingApiItem[] | null;
+}
 
-const startingSoonMock = [
-  {
-    id: 4,
-    name: "iPhone 14 Pro · starts in 20 min",
-    price: "Starting bid: $600",
-    image:
-      "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg?auto=compress&cs=tinysrgb&w=600",
-    tag: "Starting soon",
-  },
-  // ...
-];
+interface StripItem {
+  id: string;
+  name: string;
+  price: string;
+  image: string;
+  tag: string;
+}
 
 const LoggedInLandingPage: React.FC = () => {
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("user");
+  const [trendingItems, setTrendingItems] = useState<StripItem[]>([]);
+  const [endingSoonItems, setEndingSoonItems] = useState<StripItem[]>([]);
+  const [latestItems, setLatestItems] = useState<StripItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
+
+  const getApiUrl = (path: string) => {
+    const rawApiBase = (import.meta.env.VITE_API_BASE as string) || "";
+    const apiBase = rawApiBase.replace(/["']+/g, "").trim();
+    return apiBase ? `${apiBase.replace(/\/$/, "")}${path}` : path;
+  };
+
+  const mapToStripItems = (items: TopListingApiItem[] | null, tag: string): StripItem[] => {
+    if (!Array.isArray(items)) return [];
+
+    return items.map((item) => ({
+      id: item.id,
+      name: item.subtitle ? `${item.title} · ${item.subtitle}` : item.title,
+      price: `Current bid: ${formatCurrency(item.current_bid)}`,
+      image: item.image,
+      tag,
+    }));
+  };
+
+  useEffect(() => {
+    const fetchTopListings = async () => {
+      setLoading(true);
+      setFetchError(null);
+
+      try {
+        const token = localStorage.getItem("accessToken");
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(getApiUrl("/api/toplistings"), {
+          method: "GET",
+          headers,
+        });
+
+        const payload: TopListingsResponse = await response.json().catch(() => ({
+          ending_soon: null,
+          starting_soon: null,
+          trending_now: null,
+        }));
+
+        if (!response.ok) {
+          const message = (payload as any)?.error || (payload as any)?.message || "Failed to fetch top listings";
+          throw new Error(message);
+        }
+
+        setTrendingItems(mapToStripItems(payload.trending_now, "Trending"));
+        setEndingSoonItems(mapToStripItems(payload.ending_soon, "Ending soon"));
+        setLatestItems(mapToStripItems(payload.starting_soon, "Latest"));
+      } catch (err: unknown) {
+        setFetchError(err instanceof Error ? err.message : "Failed to fetch top listings");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopListings();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -70,7 +120,7 @@ const LoggedInLandingPage: React.FC = () => {
 
   const renderStrip = (
     title: string,
-    items: typeof trendingMock,
+    items: StripItem[],
     viewAllHref: string
   ) => (
     <section className="strip-section">
@@ -84,6 +134,7 @@ const LoggedInLandingPage: React.FC = () => {
         </button>
       </div>
       <div className="strip-scroll">
+        {items.length === 0 && <div>No auctions available.</div>}
         {items.map((item) => (
           <article key={item.id} className="strip-card">
             <div className="strip-image-wrap">
@@ -175,9 +226,15 @@ const LoggedInLandingPage: React.FC = () => {
       </section>
 
       {/* Horizontal strips */}
-      {renderStrip("Trending now", trendingMock, "/explore/trending")}
-      {renderStrip("Ending soon", endingSoonMock, "/explore/ending-soon")}
-      {renderStrip("Starting soon", startingSoonMock, "/explore/starting-soon")}
+      {loading && <section className="strip-section">Loading auctions...</section>}
+      {!loading && fetchError && <section className="strip-section">{fetchError}</section>}
+      {!loading && !fetchError && (
+        <>
+          {renderStrip("Trending now", trendingItems, "/explore/trending")}
+          {renderStrip("Ending soon", endingSoonItems, "/explore/ending-soon")}
+          {renderStrip("Latest", latestItems, "/explore/starting-soon")}
+        </>
+      )}
 
       {/* Footer can stay the same if you like */}
       <footer className="footer">
