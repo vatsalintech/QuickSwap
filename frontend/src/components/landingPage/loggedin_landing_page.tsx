@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../landingPage/loggedin_landing_page.css"; 
+import TopListingsStrip from "./top_listings_strip";
+import type { StripItem } from "./top_listings_strip";
 
 interface TopListingApiItem {
   id: string;
@@ -16,14 +18,6 @@ interface TopListingsResponse {
   ending_soon: TopListingApiItem[] | null;
   starting_soon: TopListingApiItem[] | null;
   trending_now: TopListingApiItem[] | null;
-}
-
-interface StripItem {
-  id: string;
-  name: string;
-  price: string;
-  image: string;
-  tag: string;
 }
 
 const LoggedInLandingPage: React.FC = () => {
@@ -118,47 +112,6 @@ const LoggedInLandingPage: React.FC = () => {
     navigate("/start_selling");
   };
 
-  const renderStrip = (
-    title: string,
-    items: StripItem[],
-    viewAllHref: string
-  ) => (
-    <section className="strip-section">
-      <div className="strip-header">
-        <h2>{title}</h2>
-        <button
-          className="strip-view-all"
-          onClick={() => navigate(viewAllHref)}
-        >
-          Show all
-        </button>
-      </div>
-      <div className="strip-scroll">
-        {items.length === 0 && <div>No auctions available.</div>}
-        {items.map((item) => (
-          <article key={item.id} className="strip-card">
-            <div className="strip-image-wrap">
-              <img src={item.image} alt={item.name} />
-              <span className="product-tag">{item.tag}</span>
-            </div>
-            <div className="strip-body">
-              <h3>{item.name}</h3>
-              <div className="strip-meta">
-                <span className="product-price">{item.price}</span>
-                <button
-                  className="btn tiny"
-                  onClick={() => navigate(`/auction/${item.id}`)}
-                >
-                  View
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-
   return (
     <div className="landing">
       {/* Navbar – identical to your current one */}
@@ -230,9 +183,24 @@ const LoggedInLandingPage: React.FC = () => {
       {!loading && fetchError && <section className="strip-section">{fetchError}</section>}
       {!loading && !fetchError && (
         <>
-          {renderStrip("Trending now", trendingItems, "/explore/trending")}
-          {renderStrip("Ending soon", endingSoonItems, "/explore/ending-soon")}
-          {renderStrip("Latest", latestItems, "/explore/starting-soon")}
+          <TopListingsStrip
+            title="Trending now"
+            items={trendingItems}
+            onShowAll={() => navigate("/explore/trending")}
+            onViewItem={(id) => navigate(`/auction/${id}`)}
+          />
+          <TopListingsStrip
+            title="Ending soon"
+            items={endingSoonItems}
+            onShowAll={() => navigate("/explore/ending-soon")}
+            onViewItem={(id) => navigate(`/auction/${id}`)}
+          />
+          <TopListingsStrip
+            title="Latest"
+            items={latestItems}
+            onShowAll={() => navigate("/explore/starting-soon")}
+            onViewItem={(id) => navigate(`/auction/${id}`)}
+          />
         </>
       )}
 
