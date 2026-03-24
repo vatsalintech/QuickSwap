@@ -1,85 +1,211 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./auction_detail.css";
 
-interface AuctionDetailProps {
-  // later these will come from backend
-  isSeller?: boolean;
-  hasJoined?: boolean;
-  isHighestBidder?: boolean;
-  lastBidAmount?: number | null;
+interface SingleListingResponse {
+  listing_id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  images: string[];
+  image: string;
+  seller_id: string;
+  seller_name: string;
+  current_bid: number;
+  starting_bid: number;
+  buy_now_price?: number | null;
+  total_bids: number;
+  time_left: string;
+  status: string;
+  auction_end_time: string;
+  is_seller: boolean;
+  has_joined: boolean;
+  is_highest_bidder: boolean;
+  caller_last_bid?: number | null;
+  location?: string;
+  condition?: string;
+  brand?: string;
 }
 
-const AuctionDetail: React.FC<AuctionDetailProps> = ({
-  isSeller = false,
-  hasJoined = false,
-  isHighestBidder = false,
-  lastBidAmount = 220, // example static value
-}) => {
-  // simple static product data for now
-  const productTitle = "Sony WH‑1000XM5 Wireless Headphones";
-  const productSubtitle = "Matte black · Noise cancelling · Used · Excellent condition";
-  const sellerName = "Alex Johnson";
-  const currentBid = 245;
-  const timeLeft = "18m 32s";
-  const bidsCount = 9;
+const formatCurrency = (amount: number): string =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount || 0);
 
-  // decide primary call‑to‑action text
+const getApiUrl = (path: string): string => {
+  const rawApiBase = (import.meta.env.VITE_API_BASE as string) || "";
+  const apiBase = rawApiBase.replace(/["']+/g, "").trim();
+  return apiBase ? `${apiBase.replace(/\/$/, "")}${path}` : path;
+};
+
+const AuctionDetail: React.FC = () => {
+  const navigate = useNavigate();
+  const { id: paramId } = useParams();
+  const [searchParams] = useSearchParams();
+
+  const listingId = useMemo(
+    () => paramId || searchParams.get("id") || "",
+    [paramId, searchParams],
+  );
+
+  const [listing, setListing] = useState<SingleListingResponse | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [bidAmount, setBidAmount] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!listingId) {
+        setError("Listing ID is missing.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = localStorage.getItem("accessToken");
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(getApiUrl(`/api/listing?id=${encodeURIComponent(listingId)}`), {
+          method: "GET",
+          headers,
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload?.error || payload?.message || "Failed to fetch listing");
+        }
+
+        const normalized: SingleListingResponse = {
+          ...payload,
+          images: Array.isArray(payload.images)
+            ? payload.images.filter((img: unknown) => typeof img === "string")
+            : [],
+        };
+
+        setListing(normalized);
+        setSelectedImage(normalized.image || normalized.images[0] || "");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to fetch listing");
+        setListing(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListing();
+  }, [listingId]);
+
+  if (loading) {
+    return (
+      <div className="auction-page">
+        <p>Loading auction details...</p>
+      </div>
+    );
+  }
+
+  if (error || !listing) {
+    return (
+      <div className="auction-page">
+        <button className="auction-back" onClick={() => navigate(-1)}>
+          Back
+        </button>
+        <p>{error || "Listing not found."}</p>
+      </div>
+    );
+  }
+
+  const {
+    title,
+    subtitle,
+    description,
+    images,
+    seller_name,
+    current_bid,
+    starting_bid,
+    buy_now_price,
+    total_bids,
+    time_left,
+    status,
+    is_seller,
+    has_joined,
+    is_highest_bidder,
+    caller_last_bid,
+    location,
+    condition,
+    brand,
+  } = listing;
+
+  const canBid = !is_seller && status.toLowerCase() === "active";
+
+  // Decide primary call-to-action text based on backend participation state.
   let primaryCtaLabel = "Join auction";
-  if (isSeller) {
+  if (is_seller) {
     primaryCtaLabel = "Manage listing";
-  } else if (hasJoined && isHighestBidder) {
-    primaryCtaLabel = "You’re leading – raise max bid";
-  } else if (hasJoined && !isHighestBidder) {
+  } else if (has_joined && is_highest_bidder) {
+    primaryCtaLabel = "You are leading - raise max bid";
+  } else if (has_joined && !is_highest_bidder) {
     primaryCtaLabel = "Place higher bid";
   }
 
   return (
     <div className="auction-page">
-      <button className="auction-back" onClick={() => window.history.back()}>
-        ← Back to results
+      <button className="auction-back" onClick={() => navigate(-1)}>
+        Back to results
       </button>
 
       <div className="auction-layout">
-        {/* Left: gallery */}
         <section className="auction-gallery">
           <div className="auction-main-image">
-            <img
-              src="https://images.pexels.com/photos/3394664/pexels-photo-3394664.jpeg?auto=compress&cs=tinysrgb&w=800"
-              alt="Product"
-            />
+            {selectedImage ? (
+              <img src={selectedImage} alt={title} />
+            ) : (
+              <div className="auction-empty-image">No image available</div>
+            )}
           </div>
-          <div className="auction-thumbnails">
-            {/* static thumbs for now */}
-            {[1, 2, 3].map((i) => (
-              <button key={i} className="auction-thumb">
-                <img
-                  src="https://images.pexels.com/photos/3394664/pexels-photo-3394664.jpeg?auto=compress&cs=tinysrgb&w=200"
-                  alt={`Thumbnail ${i}`}
-                />
-              </button>
-            ))}
-          </div>
+          {images.length > 0 && (
+            <div className="auction-thumbnails">
+              {images.map((img, index) => (
+                <button
+                  key={`${img}-${index}`}
+                  className="auction-thumb"
+                  onClick={() => setSelectedImage(img)}
+                >
+                  <img src={img} alt={`Thumbnail ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* Right: summary + actions */}
         <section className="auction-summary">
           <header className="auction-header">
-            <h1>{productTitle}</h1>
-            <p className="auction-subtitle">{productSubtitle}</p>
+            <h1>{title}</h1>
+            <p className="auction-subtitle">{subtitle || description}</p>
           </header>
 
           <div className="auction-meta-row">
             <div>
               <span className="auction-label">Seller</span>
-              <span className="auction-value">{sellerName}</span>
+              <span className="auction-value">{seller_name || "Unknown"}</span>
             </div>
             <div>
               <span className="auction-label">Time left</span>
-              <span className="auction-value">{timeLeft}</span>
+              <span className="auction-value">{time_left}</span>
             </div>
             <div>
               <span className="auction-label">Bids</span>
-              <span className="auction-value">{bidsCount}</span>
+              <span className="auction-value">{total_bids}</span>
             </div>
           </div>
 
@@ -87,39 +213,47 @@ const AuctionDetail: React.FC<AuctionDetailProps> = ({
             <div className="auction-price-main">
               <span className="auction-label">Current bid</span>
               <div className="auction-price-line">
-                <span className="auction-price">${currentBid}</span>
-                {!isSeller && hasJoined && (
+                <span className="auction-price">{formatCurrency(current_bid)}</span>
+                {!is_seller && has_joined && (
                   <span
                     className={
                       "auction-badge " +
-                      (isHighestBidder ? "auction-badge-success" : "auction-badge-warning")
+                      (is_highest_bidder ? "auction-badge-success" : "auction-badge-warning")
                     }
                   >
-                    {isHighestBidder ? "You are highest bidder" : "You’ve been outbid"}
+                    {is_highest_bidder ? "You are highest bidder" : "You have been outbid"}
                   </span>
                 )}
               </div>
             </div>
 
-            {!isSeller && hasJoined && (
+            <div className="auction-last-bid">
+              <span className="auction-label">Starting bid</span>
+              <span className="auction-value">{formatCurrency(starting_bid)}</span>
+            </div>
+
+            {!is_seller && has_joined && (
               <div className="auction-last-bid">
                 <span className="auction-label">Your last bid</span>
                 <span className="auction-value">
-                  {lastBidAmount ? `$${lastBidAmount}` : "—"}
+                  {caller_last_bid ? formatCurrency(caller_last_bid) : "-"}
                 </span>
+              </div>
+            )}
+
+            {typeof buy_now_price === "number" && (
+              <div className="auction-last-bid">
+                <span className="auction-label">Buy now</span>
+                <span className="auction-value">{formatCurrency(buy_now_price)}</span>
               </div>
             )}
           </div>
 
-          {!isSeller && (
+          {canBid && (
             <div className="auction-actions">
-              {/* Primary action */}
-              <button className="auction-btn-primary">
-                {primaryCtaLabel}
-              </button>
+              <button className="auction-btn-primary">{primaryCtaLabel}</button>
 
-              {/* Secondary action: input to enter bid (static for now) */}
-              {hasJoined && (
+              {has_joined && (
                 <div className="auction-bid-input">
                   <label className="auction-label" htmlFor="bid-amount">
                     Enter your bid
@@ -130,19 +264,23 @@ const AuctionDetail: React.FC<AuctionDetailProps> = ({
                       id="bid-amount"
                       type="number"
                       className="auction-bid-field"
-                      placeholder={String(currentBid + 5)}
+                      value={bidAmount}
+                      onChange={(event) => setBidAmount(event.target.value)}
+                      placeholder={String(Math.ceil(current_bid + 5))}
                     />
-                    <button className="auction-btn-ghost">Bid</button>
+                    <button className="auction-btn-ghost" disabled>
+                      Bid
+                    </button>
                   </div>
-                  {!isHighestBidder && (
+                  {!is_highest_bidder && (
                     <p className="auction-hint">
-                      You’re currently outbid. Try at least ${currentBid + 5} to take the lead.
+                      You are currently outbid. Try at least {formatCurrency(Math.ceil(current_bid + 5))} to take the lead.
                     </p>
                   )}
                 </div>
               )}
 
-              {!hasJoined && (
+              {!has_joined && (
                 <p className="auction-hint">
                   Join the auction to place your first bid and get live updates when you are outbid.
                 </p>
@@ -150,20 +288,16 @@ const AuctionDetail: React.FC<AuctionDetailProps> = ({
             </div>
           )}
 
-          {/* Details section – fills blank space with useful info */}
           <section className="auction-details">
             <h2>Item details</h2>
             <ul>
-              <li>Purchased in 2023, lightly used for commuting and office work.</li>
-              <li>Includes original case, charging cable, and airplane adapter.</li>
-              <li>Battery still lasts 25–30 hours on a single charge.</li>
+              <li>{description || "No description provided."}</li>
+              {condition ? <li>Condition: {condition}</li> : null}
+              {brand ? <li>Brand: {brand}</li> : null}
             </ul>
 
-            <h3>Pickup & payment</h3>
-            <p>
-              Local pickup in Gainesville, FL. Cash, Zelle, or Venmo accepted. Exact location
-              shared with the winning bidder after the auction ends.
-            </p>
+            <h3>Pickup and location</h3>
+            <p>{location || "Location will be shared with the winning bidder."}</p>
           </section>
         </section>
       </div>
