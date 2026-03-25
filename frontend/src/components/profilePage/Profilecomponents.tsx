@@ -132,13 +132,14 @@ interface ListingsTabProps {
 }
 
 export const ListingsTab: React.FC<ListingsTabProps> = ({ listings, loading, error }) => {
+  const navigate = useNavigate();
   if (loading) return <div>Loading your listings...</div>;
   if (error) return <div>{error}</div>;
   if (listings.length === 0) return <div>No listings found.</div>;
   return (
     <div className="listings-grid">
       {listings.map((listing) => (
-        <article key={listing.id} className="listing-card">
+        <article key={listing.id} className="listing-card" style={{ cursor: "pointer" }} onClick={() => navigate(`/auction/${listing.id}`)}>
           <div className="listing-image-wrap">
             <img src={listing.image} alt={listing.name} />
             <span className={`listing-status ${listing.status}`}>
@@ -159,7 +160,7 @@ export const ListingsTab: React.FC<ListingsTabProps> = ({ listings, loading, err
             </div>
             <div className="listing-meta">
               <span>{listing.bids} bids</span>
-              <button className="btn-link">View details</button>
+              <span className="btn-link">View details</span>
             </div>
           </div>
         </article>
@@ -177,6 +178,7 @@ interface BidsTabProps {
 }
 
 export const BidsTab: React.FC<BidsTabProps> = ({ bids, loading, error }) => {
+  const navigate = useNavigate();
   if (loading) return <div>Loading your bids...</div>;
   if (error) return <div>{error}</div>;
   if (bids.length === 0) return <div>No bids found.</div>;
@@ -184,7 +186,7 @@ export const BidsTab: React.FC<BidsTabProps> = ({ bids, loading, error }) => {
   return (
     <div className="bids-grid">
       {bids.map((bid) => (
-        <article key={bid.id} className="bid-card">
+        <article key={bid.id} className="bid-card" style={{ cursor: "pointer" }} onClick={() => navigate(`/auction/${bid.id}`)}>
           <div className="bid-image-wrap">
             <img src={bid.image} alt={bid.name} />
             <span className={`bid-status ${bid.status}`}>
@@ -215,9 +217,9 @@ export const BidsTab: React.FC<BidsTabProps> = ({ bids, loading, error }) => {
               </div>
             )}
             <div className="bid-actions">
-              {bid.status === "outbid" && <button className="btn primary">Place higher bid</button>}
-              {bid.status === "winning" && <button className="btn ghost">View auction</button>}
-              {bid.status === "lost" && <button className="btn ghost">View details</button>}
+              {bid.status === "outbid" && <span className="btn primary" style={{ display: "block", textAlign: "center" }}>Place higher bid</span>}
+              {bid.status === "winning" && <span className="btn ghost" style={{ display: "block", textAlign: "center" }}>View auction</span>}
+              {bid.status === "lost" && <span className="btn ghost" style={{ display: "block", textAlign: "center" }}>View details</span>}
             </div>
           </div>
         </article>
