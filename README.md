@@ -29,7 +29,9 @@ The app uses Supabase for authentication. To run locally:
 
 
 ## Unit Testing
-For backend go test -v -cover ./...
+For backend '''bash
+   go test -v -cover ./...
+   '''
 
 
 ## Members
