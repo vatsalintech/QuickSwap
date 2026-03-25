@@ -5,8 +5,11 @@ import {
   Paper,
   Typography,
   Link,
+  IconButton,
 } from '@mui/material';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import './authenticate.css';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthLayoutProps {
   title: string;
@@ -27,10 +30,31 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   footerLinkHref,
   showTerms = false,
 }) => {
+  const navigate = useNavigate();
   return (
     <Box className="auth-container">
       < Container maxWidth="sm">
         <Paper elevation={0} className="auth-paper">
+
+          <Box sx={{
+              mb: 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              borderRadius: '999px',
+              padding: '4px 10px',
+              border: '1px solid var(--auth-borders)',
+              '&:hover': {
+                backgroundColor: 'var(--auth-section-bg)',
+              },
+            }}
+            onClick={() => navigate('/')}>
+            <ArrowBackIosNewIcon fontSize="small" className="auth-back-icon" />
+            <Typography variant="body2" className="auth-back-text">
+              Home
+            </Typography>
+          </Box>
+
           <Box className="auth-header">
             <Typography variant="h5" className="auth-title">
               {title}
@@ -60,7 +84,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 
           {/* Terms */}
           {showTerms && (
-            <Typography className="auth-terms">
+            <Typography variant="body2" className="auth-terms">
               By creating an account, you agree to our{' '}
               <Link href="/terms" className="auth-link">
                 Terms of Service

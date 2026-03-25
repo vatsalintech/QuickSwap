@@ -3,22 +3,59 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./profile_page.css";
 
-interface MeResponse {
+interface ProfileResponse {
   id: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
+  mobile?: string;
 }
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<"listings" | "bids" | "settings">("listings");
-  const [user, setUser] = useState<MeResponse | null>(null);
+  const [user, setUser] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Modal State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: "",
+    last_name: "",
+    mobile: "",
+  });
+
+  const handleEditOpen = () => {
+    if (user) {
+      setEditForm({
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        mobile: user.mobile || "",
+      });
+      setIsEditingProfile(true);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Mock saving profile to backend:", editForm);
+    // TODO: the backend route PUT /api/profile needs to be built.
+    
+    // Simulate successful backend save by updating local structures
+    if (user) {
+      const updatedUser = { ...user, ...editForm };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+    
+    setIsEditingProfile(false);
+  };
+
   const navigate = useNavigate();
 
-  // Fetch current user from backend
+  // Fetch current user from localStorage
   useEffect(() => {
-    const fetchMe = async () => {
+    const loadUser = () => {
       try {
         const token = localStorage.getItem("accessToken");
         if (!token) {
@@ -27,36 +64,25 @@ const ProfilePage = () => {
           return;
         }
 
-        const apiBase = (import.meta.env.VITE_API_BASE as string) || "";
-        const meUrl = apiBase
-          ? `${apiBase.replace(/\/$/, "")}/api/auth/me`
-          : "/api/auth/me";
-
-        const res = await fetch(meUrl, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          // e.g. 401 invalid/expired token
-          setError("Session expired");
+        const userStr = localStorage.getItem("user");
+        if (!userStr) {
+          setError("User data not found in local storage.");
           navigate("/signin");
           return;
         }
 
-        const data: MeResponse = await res.json();
+        const data: ProfileResponse = JSON.parse(userStr);
         setUser(data);
       } catch (err: any) {
-        console.error("Failed to fetch /me:", err);
+        console.error("Failed to parse user from local storage:", err);
         setError("Failed to load profile");
+        navigate("/signin");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMe();
+    loadUser();
   }, [navigate]);
 
   const userListings = [
@@ -135,23 +161,98 @@ const ProfilePage = () => {
     return <div className="profile-page">Unable to load profile.</div>;
   }
 
-  // Derive a display name from email for now
-  const displayName = user.email.split("@")[0]; // e.g., vatsal.shah -> "vatsal.shah"
-  const username = `@${displayName}`;
+  const displayName = user.first_name && user.last_name
+    ? `${user.first_name} ${user.last_name}`
+    : user.email.split("@")[0];
+  const userEmail = user.email;
 
   return (
     <div className="profile-page">
+      {/* Edit Profile Modal Overlay */}
+      {isEditingProfile && (
+        <div className="edit-profile-modal-overlay">
+          <div className="edit-profile-modal-content">
+            <h2>Edit Profile</h2>
+            <form onSubmit={handleEditSubmit} className="edit-profile-form">
+              <div className="settings-group">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  value={editForm.first_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, first_name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="settings-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  value={editForm.last_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, last_name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="settings-group">
+                <label>Phone number</label>
+                <input
+                  type="tel"
+                  value={editForm.mobile}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, mobile: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="settings-group">
+                <label>Email address</label>
+                <input
+                  type="email"
+                  value={user?.email || ""}
+                  disabled
+                  className="disabled-input"
+                />
+              </div>
+              
+              <div className="edit-profile-actions">
+                <button type="button" className="btn ghost" onClick={() => setIsEditingProfile(false)}>Cancel</button>
+                <button type="submit" className="btn primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header/Navbar */}
       <header className="profile-navbar">
-        <div className="navbar-logo">
-          <span className="logo-text">Quickswap</span>
+        <div className="profile-navbar-left">
+          <button
+            className="profile-back-pill"
+            onClick={() => navigate("/")}
+          >
+            ← Back
+          </button>
+          <div className="navbar-logo">
+            <span className="logo-text">Quickswap</span>
+          </div>
         </div>
+
         <nav className="navbar-links">
-          <a href="#browse">Browse</a>
-          <a href="#sell">Sell</a>
-          <a href="#profile" className="active">
+          <button
+            className="navbar-link-button"
+            onClick={() => navigate("/")}
+          >
+            Browse
+          </button>
+          <button
+            className="navbar-link-button"
+            onClick={() => navigate("/start_selling")}
+          >
+            Sell
+          </button>
+          <button
+            className="navbar-link-button active"
+            onClick={() => navigate("/profile")}
+          >
             Profile
-          </a>
+          </button>
         </nav>
         <div className="navbar-actions">
           <button className="btn ghost-icon">
@@ -192,10 +293,7 @@ const ProfilePage = () => {
           </div>
           <div className="profile-info">
             <h1>{displayName}</h1>
-            <p className="profile-username">{username}</p>
-            <p className="profile-bio">
-              Tech-Enthusiast | Gainesville, Florida
-            </p>
+            <p className="profile-username">{userEmail}</p>
           </div>
           <div className="profile-stats">
             <div className="stat">
@@ -213,8 +311,7 @@ const ProfilePage = () => {
           </div>
         </div>
         <div className="profile-actions">
-          <button className="btn ghost">Edit profile</button>
-          <button className="btn primary">Create listing</button>
+          {/* Actions moved to tabs */}
         </div>
       </section>
 
@@ -358,26 +455,27 @@ const ProfilePage = () => {
         {activeTab === "settings" && (
           <div className="settings-container">
             <div className="settings-section">
-              <h2>Account Settings</h2>
-              <div className="settings-group">
-                <label>Email address</label>
-                <input type="email" defaultValue={user.email} />
+              <h2>Account Details</h2>
+              <div className="settings-group inline" style={{ marginBottom: 0 }}>
+                <label>Personal information</label>
+                <button className="btn ghost" onClick={handleEditOpen}>Edit profile</button>
               </div>
-              <div className="settings-group">
-                <label>Phone number</label>
-                <input type="tel" defaultValue="+1 (352) 555-0123" />
-              </div>
-              <div className="settings-group">
-                <label>Location</label>
-                <input type="text" defaultValue="Gainesville, FL" />
-              </div>
-              <button className="btn primary">Save changes</button>
             </div>
+            
             <div className="settings-section">
               <h2>Privacy & Security</h2>
-              <div className="settings-group">
+              <div className="settings-group inline">
                 <label>Change password</label>
                 <button className="btn ghost">Update password</button>
+              </div>
+              <div className="settings-group inline" style={{ marginBottom: 0 }}>
+                <label style={{ color: "var(--error)" }}>Delete account</label>
+                <button 
+                  className="btn ghost" 
+                  style={{ color: "var(--error)", borderColor: "var(--error-soft)" }}
+                >
+                  Delete account
+                </button>
               </div>
             </div>
           </div>

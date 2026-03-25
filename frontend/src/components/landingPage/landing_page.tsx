@@ -61,7 +61,7 @@ const LandingPage = () => {
     }
     // logged in: later this can go to /sell; for now maybe /profile
     // navigate("/sell");
-    navigate("/profile");
+    navigate("/start_selling");
   };
 
   return (
