@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./profile_page.css";
 
 import type { ActiveTab } from "./Profile.types";
-import { useProfile, useMyListings, useMyBids } from "./profileHooks";
+import { useProfile, useMyListings, useMyBids } from "./ProfileHooks";
 import {
   ProfileNavbar,
   ProfileHeader,
@@ -56,10 +56,10 @@ const ProfilePage: React.FC = () => {
 
       <section className="profile-content">
         {activeTab === "listings" && (
-          <ListingsTab listings={userListings} loading={listingsLoading} error={listingsError} />
+          <ListingsTab listings={userListings} loading={listingsLoading} error={listingsError}  />
         )}
         {activeTab === "bids" && (
-          <BidsTab bids={userBids} loading={bidsLoading} error={bidsError} />
+          <BidsTab bids={userBids} loading={bidsLoading} error={bidsError}  />
         )}
         {activeTab === "settings" && (
           <SettingsTab onEditProfile={handleEditOpen} />
