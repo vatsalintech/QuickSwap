@@ -5,11 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-
 	"github.com/joho/godotenv"
 	"github.com/quickswap/quickswap/internal/auth"
 	"github.com/quickswap/quickswap/internal/db"
 	"github.com/quickswap/quickswap/internal/handlers"
+
 )
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 	http.Handle("/", fs)
 
 	// API routes
-	mux := handlers.NewRouter(authClient)
+	mux := handlers.NewRouter(authClient, pgPool, redisClient)
 	http.Handle("/api/", mux)
 
 	addr := ":8082"

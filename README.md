@@ -28,6 +28,10 @@ The app uses Supabase for authentication. To run locally:
    This will launch the app at [http://localhost:5173]
 
 
+## Unit Testing
+For backend '''bash
+   go test -v -cover ./...
+   '''
 
 
 ## Members

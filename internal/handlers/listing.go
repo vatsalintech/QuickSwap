@@ -1,0 +1,313 @@
+package handlers
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/quickswap/quickswap/internal/auth"
+
+	listing "github.com/quickswap/quickswap/internal/listings"
+)
+
+func createListingHandler(authClient *auth.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract and validate token
+		token := r.Header.Get("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+		if token == "" {
+			respondError(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Validate token by calling Supabase user endpoint
+		reqUser, _ := http.NewRequest("GET", os.Getenv("SUPABASE_URL")+"/auth/v1/user", nil)
+		reqUser.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+		reqUser.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(reqUser)
+		if err != nil {
+			respondError(w, "Failed to get user", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			respondError(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+
+		var userResp struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
+			respondError(w, "Invalid response from auth", http.StatusInternalServerError)
+			return
+		}
+
+		// Parse and validate request body
+
+		var req struct {
+			Title            string   `json:"title"`
+			Subtitle         string   `json:"subtitle"`
+			Description      string   `json:"description"`
+			Category         string   `json:"category"`
+			Subcategory      string   `json:"subcategory"`
+			Condition        string   `json:"condition"`
+			Brand            string   `json:"brand"`
+			Color            string   `json:"color"`
+			Size             string   `json:"size"`
+			Images           []string `json:"images"`
+			StartingBid      float64  `json:"starting_bid"`
+			BuyNowPrice      *float64 `json:"buy_now_price,omitempty"`
+			AuctionStartTime string   `json:"auction_start_time"`
+			AuctionEndTime   string   `json:"auction_end_time"`
+			Location         string   `json:"location"`
+			Notes            string   `json:"notes"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			respondError(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+
+		// Validate required fields
+		if req.Title == "" || req.Description == "" || req.Category == "" || len(req.Images) == 0 || req.StartingBid == 0 || req.AuctionEndTime == "" || req.Location == "" {
+			respondError(w, "Missing required fields", http.StatusBadRequest)
+			return
+		}
+
+		auctionEnd, err := time.Parse(time.RFC3339, req.AuctionEndTime)
+		if err != nil {
+			respondError(w, "Invalid auction_end_time format (must be RFC3339)", http.StatusBadRequest)
+			return
+		}
+
+		var auctionStart time.Time
+		if req.AuctionStartTime != "" {
+			auctionStart, err = time.Parse(time.RFC3339, req.AuctionStartTime)
+			if err != nil {
+				respondError(w, "Invalid auction_start_time format (must be RFC3339)", http.StatusBadRequest)
+				return
+			}
+		}
+
+		l := &listing.Listing{
+			Title:            req.Title,
+			Subtitle:         req.Subtitle,
+			Description:      req.Description,
+			Category:         req.Category,
+			Subcategory:      req.Subcategory,
+			Condition:        req.Condition,
+			Brand:            req.Brand,
+			Color:            req.Color,
+			Size:             req.Size,
+			Images:           req.Images,
+			StartingBid:      req.StartingBid,
+			BuyNowPrice:      req.BuyNowPrice,
+			AuctionStartTime: auctionStart,
+			AuctionEndTime:   auctionEnd,
+			Location:         req.Location,
+			Notes:            req.Notes,
+			SellerID:         userResp.ID, // Use ID from token
+		}
+
+		id, err := listing.CreateListing(l)
+		if err != nil {
+			respondError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		respondJSON(w, map[string]interface{}{
+			"listing_id": id,
+			"status":     "success",
+			"message":    "Listing created successfully.",
+		})
+	}
+}
+
+// Handler to fetch all listings for the current logged-in user
+func myListingHandler(authClient *auth.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Extract and validate token
+		token := r.Header.Get("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+		if token == "" {
+			respondError(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Validate token by calling Supabase user endpoint
+		reqUser, _ := http.NewRequest("GET", os.Getenv("SUPABASE_URL")+"/auth/v1/user", nil)
+		reqUser.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+		reqUser.Header.Set("Authorization", "Bearer "+token)
+
+		resp, err := http.DefaultClient.Do(reqUser)
+
+		if err != nil {
+			respondError(w, "Failed to get user", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			respondError(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+
+		var userResp struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
+			respondError(w, "Invalid response from auth", http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(userResp)
+
+		// Query Supabase for listings by this user
+		supaURL := os.Getenv("SUPABASE_URL")
+		apiKey := os.Getenv("SUPABASE_SERVICE_KEY")
+		if apiKey == "" {
+			apiKey = os.Getenv("SUPABASE_ANON_KEY")
+		}
+		url := supaURL + "/rest/v1/listings?seller_id=eq." + userResp.ID
+		reqListings, _ := http.NewRequest("GET", url, nil)
+		reqListings.Header.Set("apikey", apiKey)
+		reqListings.Header.Set("Authorization", "Bearer "+apiKey)
+		reqListings.Header.Set("Content-Type", "application/json")
+
+		respListings, err := http.DefaultClient.Do(reqListings)
+		if err != nil {
+			respondError(w, "Failed to fetch listings", http.StatusInternalServerError)
+			return
+		}
+		defer respListings.Body.Close()
+
+		if respListings.StatusCode != http.StatusOK {
+			respondError(w, "Failed to fetch listings", http.StatusInternalServerError)
+			return
+		}
+
+		var listingsArr []listing.Listing
+		if err := json.NewDecoder(respListings.Body).Decode(&listingsArr); err != nil {
+			respondError(w, "Invalid listings response", http.StatusInternalServerError)
+			return
+		}
+
+		if len(listingsArr) == 0 {
+			respondError(w, "No listings found", http.StatusNotFound)
+			return
+		}
+
+		// Build response with required fields
+		type ListingSummary struct {
+			ListingID  string  `json:"listing_id"`
+			Title      string  `json:"title"`
+			Image      string  `json:"image"`
+			CurrentBid float64 `json:"current_bid"`
+			TimeLeft   string  `json:"time_left"`
+			TotalBids  int     `json:"total_bids"`
+			Status     string  `json:"status"`
+		}
+
+		var summaries []ListingSummary
+		for _, l := range listingsArr {
+			// Fetch bids for this listing
+			bidsURL := supaURL + "/rest/v1/bids?listing_id=eq." + l.ID
+			reqBids, _ := http.NewRequest("GET", bidsURL, nil)
+			reqBids.Header.Set("apikey", apiKey)
+			reqBids.Header.Set("Authorization", "Bearer "+apiKey)
+			reqBids.Header.Set("Content-Type", "application/json")
+
+			respBids, err := http.DefaultClient.Do(reqBids)
+			if err != nil || respBids.StatusCode != http.StatusOK {
+				respBids.Body.Close()
+				summaries = append(summaries, ListingSummary{
+					ListingID:  l.ID,
+					Title:      l.Title,
+					Image:      "",
+					CurrentBid: l.StartingBid,
+					TimeLeft:   "Ended",
+					TotalBids:  0,
+					Status:     "Ended",
+				})
+				continue
+			}
+			var bids []struct {
+				BidAmount float64 `json:"bid_amount"`
+			}
+			if err := json.NewDecoder(respBids.Body).Decode(&bids); err != nil {
+				respBids.Body.Close()
+				summaries = append(summaries, ListingSummary{
+					ListingID:  l.ID,
+					Title:      l.Title,
+					Image:      "",
+					CurrentBid: l.StartingBid,
+					TimeLeft:   "Ended",
+					TotalBids:  0,
+					Status:     "Ended",
+				})
+				continue
+			}
+			respBids.Body.Close()
+
+			// Calculate max bid
+			maxBid := l.StartingBid
+			for _, b := range bids {
+				if b.BidAmount > maxBid {
+					maxBid = b.BidAmount
+				}
+			}
+			totalBids := len(bids)
+
+			// Calculate time left
+			auctionEnd := l.AuctionEndTime
+			duration := time.Until(auctionEnd)
+			var timeLeft string
+			var status string
+			if duration > 0 {
+				hours := int(duration.Hours())
+				minutes := int(duration.Minutes()) % 60
+				timeLeft = fmt.Sprintf("%dh %dm", hours, minutes)
+				status = "Active"
+			} else {
+				timeLeft = "Ended"
+				status = "Ended"
+			}
+
+			image := ""
+			if len(l.Images) > 0 {
+				image = l.Images[0]
+			}
+
+			summaries = append(summaries, ListingSummary{
+				ListingID:  l.ID,
+				Title:      l.Title,
+				Image:      image,
+				CurrentBid: maxBid,
+				TimeLeft:   timeLeft,
+				TotalBids:  totalBids,
+				Status:     status,
+			})
+		}
+
+		respondJSON(w, map[string]interface{}{
+			"listings": summaries,
+		})
+	}
+}
