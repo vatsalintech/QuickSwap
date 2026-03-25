@@ -20,6 +20,8 @@ func NewRouter(c *auth.Client, pg *pgxpool.Pool, rdb *redis.Client) http.Handler
 	// Register listing route
 	mux.HandleFunc("/api/createlisting", createListingHandler(c))
 	mux.HandleFunc("/api/mylistings", myListingHandler(c))
+	mux.HandleFunc("/api/listing", singleListingHandler(c))
+
 	// Register bids Api
 	mux.HandleFunc("/api/mybids", myBidsHandler(c))
 	mux.HandleFunc("/api/toplistings", topListingsHandler(c))
