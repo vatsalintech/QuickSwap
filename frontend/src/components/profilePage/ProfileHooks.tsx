@@ -21,7 +21,11 @@ export const formatCurrency = (amount: number): string =>
 export const getApiUrl = (path: string): string => {
   const rawApiBase = (import.meta.env.VITE_API_BASE as string) || "";
   const apiBase = rawApiBase.replace(/["']+/g, "").trim();
-  return apiBase ? `${apiBase.replace(/\/$/, "")}${path}` : path;
+  if (!apiBase) return path;
+  
+  const normalizedBase = apiBase.replace(/\/$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
 };
 
 // ─── useProfile ───────────────────────────────────────────────────────────────
