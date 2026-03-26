@@ -83,35 +83,71 @@
   margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 12px;
 }
 
-.sell-photo-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 4px 10px;
+.sell-photo-preview-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
   border: 1px solid #e5e7eb;
   background-color: #ffffff;
-  font-size: 0.78rem;
-  color: #4b5563;
+}
+
+.sell-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sell-photo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.sell-photo-name {
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 .sell-photo-remove {
-  background: transparent;
+  background: #ef4444;
   border: none;
-  color: #ef4444;
+  color: #ffffff;
   cursor: pointer;
-  padding: 0 2px;
-  font-size: 0.8rem;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  font-size: 0.65rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  transition: background-color 0.1s;
 }
 
 .sell-photo-remove:hover {
-  color: #b91c1c;
+  background-color: #dc2626;
+}
+
+.sell-photo-remove:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
 }
 
 .sell-photo-more {
