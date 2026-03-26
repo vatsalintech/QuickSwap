@@ -31,6 +31,40 @@ const subcategoriesByCategory: Record<string, string[]> = {
   other: ["Miscellaneous"],
 };
 
+interface PhotoPreviewProps {
+  file: File;
+  onRemove: () => void;
+  disabled: boolean;
+}
+
+const PhotoPreview: React.FC<PhotoPreviewProps> = ({ file, onRemove, disabled }) => {
+  const [previewUrl, setPreviewUrl] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <div className="sell-photo-preview-item">
+      {previewUrl && <img src={previewUrl} alt={file.name} className="sell-photo-img" />}
+      <div className="sell-photo-overlay">
+        <span className="sell-photo-name" title={file.name}>{file.name}</span>
+        <button 
+          type="button" 
+          onClick={onRemove} 
+          className="sell-photo-remove" 
+          disabled={disabled}
+          title="Remove photo"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const StartSelling: React.FC = () => {
   const navigate = useNavigate();
 
@@ -235,10 +269,12 @@ const StartSelling: React.FC = () => {
           {photos.length > 0 && (
             <div className="sell-photo-preview-row">
               {photos.map((file, idx) => (
-                <div key={idx} className="sell-photo-chip">
-                  <span className="sell-photo-name">{file.name}</span>
-                  <button type="button" onClick={() => removePhoto(idx)} className="sell-photo-remove" disabled={isSubmitting}>✕</button>
-                </div>
+                <PhotoPreview
+                  key={`${file.name}-${idx}`}
+                  file={file}
+                  onRemove={() => removePhoto(idx)}
+                  disabled={isSubmitting}
+                />
               ))}
             </div>
           )}

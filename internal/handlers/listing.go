@@ -311,3 +311,176 @@ func myListingHandler(authClient *auth.Client) http.HandlerFunc {
 		})
 	}
 }
+
+func singleListingHandler(authClient *auth.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			respondError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		listingID := r.URL.Query().Get("id")
+		if listingID == "" {
+			respondError(w, "Listing ID required", http.StatusBadRequest)
+			return
+		}
+
+		supaURL := os.Getenv("SUPABASE_URL")
+		apiKey := os.Getenv("SUPABASE_SERVICE_KEY")
+		if apiKey == "" {
+			apiKey = os.Getenv("SUPABASE_ANON_KEY")
+		}
+
+		// --- Optional: extract caller identity from token (for bid status) ---
+		callerID := ""
+		token := r.Header.Get("Authorization")
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+		if token != "" {
+			reqUser, _ := http.NewRequest("GET", supaURL+"/auth/v1/user", nil)
+			reqUser.Header.Set("apikey", os.Getenv("SUPABASE_ANON_KEY"))
+			reqUser.Header.Set("Authorization", "Bearer "+token)
+
+			respUser, err := http.DefaultClient.Do(reqUser)
+			if err == nil && respUser.StatusCode == http.StatusOK {
+				var userResp struct {
+					ID string `json:"id"`
+				}
+				if err := json.NewDecoder(respUser.Body).Decode(&userResp); err == nil {
+					callerID = userResp.ID
+				}
+				respUser.Body.Close()
+			}
+		}
+
+		// --- Fetch listing ---
+		listingURL := supaURL + "/rest/v1/listings?id=eq." + listingID
+		reqListing, _ := http.NewRequest("GET", listingURL, nil)
+		reqListing.Header.Set("apikey", apiKey)
+		reqListing.Header.Set("Authorization", "Bearer "+apiKey)
+		reqListing.Header.Set("Content-Type", "application/json")
+
+		respListing, err := http.DefaultClient.Do(reqListing)
+		if err != nil {
+			respondError(w, "Failed to fetch listing", http.StatusInternalServerError)
+			return
+		}
+		defer respListing.Body.Close()
+
+		if respListing.StatusCode != http.StatusOK {
+			respondError(w, "Failed to fetch listing", http.StatusInternalServerError)
+			return
+		}
+
+		var listings []listing.Listing
+		if err := json.NewDecoder(respListing.Body).Decode(&listings); err != nil || len(listings) == 0 {
+			respondError(w, "Listing not found", http.StatusNotFound)
+			return
+		}
+		l := listings[0]
+
+		// --- Fetch seller profile ---
+		sellerName := "Unknown"
+		profileURL := supaURL + "/rest/v1/profiles?id=eq." + l.SellerID
+		reqProfile, _ := http.NewRequest("GET", profileURL, nil)
+		reqProfile.Header.Set("apikey", apiKey)
+		reqProfile.Header.Set("Authorization", "Bearer "+apiKey)
+		reqProfile.Header.Set("Content-Type", "application/json")
+
+		respProfile, err := http.DefaultClient.Do(reqProfile)
+		if err == nil && respProfile.StatusCode == http.StatusOK {
+			var profiles []struct {
+				FirstName string `json:"first_name"`
+				LastName  string `json:"last_name"`
+			}
+			if err := json.NewDecoder(respProfile.Body).Decode(&profiles); err == nil && len(profiles) > 0 {
+				sellerName = profiles[0].FirstName + " " + profiles[0].LastName
+			}
+			respProfile.Body.Close()
+		}
+
+		// --- Fetch bids for this listing ---
+		bidsURL := supaURL + "/rest/v1/bids?listing_id=eq." + listingID
+		reqBids, _ := http.NewRequest("GET", bidsURL, nil)
+		reqBids.Header.Set("apikey", apiKey)
+		reqBids.Header.Set("Authorization", "Bearer "+apiKey)
+		reqBids.Header.Set("Content-Type", "application/json")
+
+		respBids, err := http.DefaultClient.Do(reqBids)
+		if err != nil {
+			respondError(w, "Failed to fetch bids", http.StatusInternalServerError)
+			return
+		}
+		defer respBids.Body.Close()
+
+		var bids []struct {
+			UserID    string  `json:"user_id"`
+			BidAmount float64 `json:"bid_amount"`
+		}
+		if err := json.NewDecoder(respBids.Body).Decode(&bids); err != nil {
+			respondError(w, "Invalid bids response", http.StatusInternalServerError)
+			return
+		}
+
+		// --- Compute bid stats ---
+		currentBid := l.StartingBid
+		highestBidderID := ""
+		var callerLastBid *float64
+
+		for _, b := range bids {
+			if b.BidAmount > currentBid {
+				currentBid = b.BidAmount
+				highestBidderID = b.UserID
+			}
+			if b.UserID == callerID && (callerLastBid == nil || b.BidAmount > *callerLastBid) {
+				amt := b.BidAmount
+				callerLastBid = &amt
+			}
+		}
+
+		// --- Compute time left ---
+		duration := time.Until(l.AuctionEndTime)
+		var timeLeft, status string
+		if duration > 0 {
+			hours := int(duration.Hours())
+			minutes := int(duration.Minutes()) % 60
+			seconds := int(duration.Seconds()) % 60
+			timeLeft = fmt.Sprintf("%dh %dm %ds", hours, minutes, seconds)
+			status = "active"
+		} else {
+			timeLeft = "Ended"
+			status = "ended"
+		}
+
+		image := ""
+		if len(l.Images) > 0 {
+			image = l.Images[0]
+		}
+
+		respondJSON(w, map[string]interface{}{
+			"listing_id":          l.ID,
+			"title":               l.Title,
+			"subtitle":            l.Subtitle,
+			"description":         l.Description,
+			"images":              l.Images,
+			"image":               image,
+			"seller_id":           l.SellerID,
+			"seller_name":         sellerName,
+			"current_bid":         currentBid,
+			"starting_bid":        l.StartingBid,
+			"buy_now_price":       l.BuyNowPrice,
+			"total_bids":          len(bids),
+			"time_left":           timeLeft,
+			"status":              status,
+			"auction_end_time":    l.AuctionEndTime,
+			"is_seller":           callerID == l.SellerID,
+			"has_joined":          callerLastBid != nil,
+			"is_highest_bidder":   callerID != "" && callerID == highestBidderID,
+			"caller_last_bid":     callerLastBid,
+			"location":            l.Location,
+			"condition":           l.Condition,
+			"brand":               l.Brand,
+		})
+	}
+}
