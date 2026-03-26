@@ -29,10 +29,16 @@ The app uses Supabase for authentication. To run locally:
 
 
 ## Unit Testing
-For backend '''bash
-   go test -v -cover ./...
-   '''
+For backend '''bash go test -v -cover ./... '''
 
+For frontend 
+
+```
+cd frontend
+npm i
+npm run test 
+npm run cypress:run
+```
 
 ## Members
 
