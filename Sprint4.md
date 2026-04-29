@@ -113,6 +113,23 @@ Background goroutine (`StartAuctionSettlementWorker`) that runs on server start.
 
 ---
 
+### Deployment
+
+#### Frontend — Vercel
+- Deployed the React app to **Vercel**.
+- Added `frontend/vercel.json` with a catch-all rewrite (`/(.*) → /index.html`) so React Router handles all client-side routes without 404s on hard refresh or direct navigation.
+
+#### Backend — Docker + Render
+- Wrote a **multi-stage `Dockerfile`** (builder: `golang:1.24-alpine`, runtime: `alpine:latest`) that compiles a fully static binary (`CGO_ENABLED=0`) and exposes port `8082`; Render overrides the port via `$PORT` at runtime.
+- Installed `ca-certificates` and `tzdata` in the runtime image so the server can make TLS calls to Supabase and Upstash.
+- Deployed the containerized backend to **Render** as a web service; environment variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`, `UPSTASH_REDIS_URL`, `PORT`) are set via Render's environment configuration.
+
+#### Redis
+- Added `docker-compose.yml` (`redis:7-alpine`, persistent `redis_data` volume, port `6379`) for local development.
+- Production SSE fan-out and auction settlement use **Upstash Redis** (TLS, accessed over HTTPS from the Render container).
+
+---
+
 ## Frontend Unit Tests
 
 All tests run with **Vitest** + **jsdom** + **Testing Library** (`npm test`). Config: `frontend/vitest.config.ts` (includes `src/test/setup.ts`).

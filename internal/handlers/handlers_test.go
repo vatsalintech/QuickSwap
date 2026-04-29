@@ -29,6 +29,30 @@ func TestNewRouter(t *testing.T) {
 	}
 }
 
+func TestHealthCheckHandler(t *testing.T) {
+	handler := healthCheckHandler()
+	req := httptest.NewRequest("GET", "/api/health", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", rr.Code)
+	}
+	body := rr.Body.String()
+	if body == "" {
+		t.Error("Expected non-empty response body")
+	}
+}
+
+func TestSSEAuctionHandler_NoID(t *testing.T) {
+	handler := sseAuctionHandler(nil)
+	req := httptest.NewRequest("GET", "/api/ws/auctions/", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for missing auction ID, got %d", rr.Code)
+	}
+}
+
 func TestBidHandler(t *testing.T) {
 	ts := setupHandlersMockServer()
 	defer ts.Close()
