@@ -16,6 +16,8 @@ import (
 // If REDIS_URL is not set, it defaults to localhost:6379.
 func NewRedisClient(ctx context.Context) (*redis.Client, error) {
 	addr := os.Getenv("REDIS_URL")
+	log.Printf("[DEBUG] REDIS_URL = %q", addr) // add this temporarily
+
 	if addr == "" {
 		// Default to localhost if not set
 		addr = "localhost:6379"
