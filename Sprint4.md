@@ -9,17 +9,11 @@
 #### Performance Optimization & Loading States
 - **80% faster page load** through aggressive code splitting and lazy loading of route bundles.
 - **Skeleton loaders** for listings, profile sections, and notification panels; prevents layout shift on data arrival.
-- **Image lazy loading** on auction detail and listing cards; reduces initial bundle size.
-- **TanStack Query caching improvements** — stale-time tuning to reuse cache across navigation without redundant fetches.
-- **Bundle analysis** — removed unused dependencies; tree-shaking optimized.
 
 #### Navigation & Routing UI Enhancements
 - **Navbar redesign** — consistent header across all pages (landing, explore, profile, auction detail); fixed positioning with smooth scroll behavior.
 - **Mobile navbar** — responsive hamburger menu with smooth slide-in/out transition; links collapse to icon-only on small screens.
-- **Breadcrumbs** — added to auction detail and profile pages for improved navigation UX; active page highlighted.
-- **Smooth page transitions** — fade-in animations when loading new routes; reduced jank with CSS transforms.
-- **Active link styling** — clearer visual feedback for current page in navbar; underline + color change.
-
+-
 #### Profile Management Enhancements
 - **Inline profile editing** — edit button opens modal with **first_name, last_name, mobile** fields; preserves **bio** and **location** from cache.
 - **Profile completeness indicator** — visual badge showing % of fields filled (avatar, bio, location, payment, address).
