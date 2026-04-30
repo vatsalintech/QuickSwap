@@ -9,11 +9,17 @@
 #### Performance Optimization & Loading States
 - **80% faster page load** through aggressive code splitting and lazy loading of route bundles.
 - **Skeleton loaders** for listings, profile sections, and notification panels; prevents layout shift on data arrival.
+- **Image lazy loading** on auction detail and listing cards; reduces initial bundle size.
+- **TanStack Query caching improvements** — stale-time tuning to reuse cache across navigation without redundant fetches.
+- **Bundle analysis** — removed unused dependencies; tree-shaking optimized.
 
 #### Navigation & Routing UI Enhancements
 - **Navbar redesign** — consistent header across all pages (landing, explore, profile, auction detail); fixed positioning with smooth scroll behavior.
 - **Mobile navbar** — responsive hamburger menu with smooth slide-in/out transition; links collapse to icon-only on small screens.
--
+- **Breadcrumbs** — added to auction detail and profile pages for improved navigation UX; active page highlighted.
+- **Smooth page transitions** — fade-in animations when loading new routes; reduced jank with CSS transforms.
+- **Active link styling** — clearer visual feedback for current page in navbar; underline + color change.
+
 #### Profile Management Enhancements
 - **Inline profile editing** — edit button opens modal with **first_name, last_name, mobile** fields; preserves **bio** and **location** from cache.
 - **Profile completeness indicator** — visual badge showing % of fields filled (avatar, bio, location, payment, address).
@@ -63,6 +69,18 @@
 - **Offline detection** — detect when user is offline; disable certain actions (bid, create listing) and show banner.
 - **Session recovery** — if token expires, automatically refresh if possible; otherwise redirect to login with return state.
 
+
+### Backend — Architecture & Features
+
+#### Production & Stability Polish
+- **Graceful Server Shutdown** — intercepts `SIGINT` and `SIGTERM` signals for controlled HTTP server shutdown; ensures PostgreSQL and Redis connection pools are closed safely before exit, preventing connection drops during cloud restarts.
+- **API Request Logging Middleware** — custom middleware logging HTTP Method, URL Path, and latency for every incoming request, critical for debugging live server issues.
+- **Database Connection Pooling** — optimized PostgreSQL connection pool by configuring `MaxOpenConns` and `MaxIdleConns` to prevent the backend from overloading the Supabase database during high traffic spikes.
+- **Dynamic Port Binding & CORS** — server dynamically binds to the `$PORT` environment variable assigned by cloud platforms; injects the `$FRONTEND_URL` into the CORS middleware for security.
+- **Health Check Endpoint** — implemented `GET /api/health` endpoint for cloud platforms to constantly ping and verify server availability.
+
+#### CI/CD Pipeline
+- **Automated GitHub Actions** — created `.github/workflows/backend-ci.yml` workflow that executes the `go test ./...` test suite on every code push, ensuring code quality and production stability.
 
 ### Backend — Docker + Render
 - Wrote a **multi-stage `Dockerfile`** (builder: `golang:1.24-alpine`, runtime: `alpine:latest`) that compiles a fully static binary (`CGO_ENABLED=0`); Render overrides the exposed port via `$PORT` at runtime.
