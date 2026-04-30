@@ -19,9 +19,9 @@ describe('Shared API and format utilities', () => {
   });
 
   describe('getApiUrl', () => {
-    it('returns path as is if VITE_API_BASE is not set', () => {
+    it('uses localhost fallback in dev if VITE_API_BASE is not set', () => {
       import.meta.env.VITE_API_BASE = '';
-      expect(getApiUrl('/api/test')).toBe('/api/test');
+      expect(getApiUrl('/api/test')).toBe('http://localhost:8082/api/test');
     });
 
     it('prepends VITE_API_BASE to path', () => {

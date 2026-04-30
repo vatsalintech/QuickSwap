@@ -30,8 +30,13 @@ describe('Profile Components', () => {
         ];
 
         it('renders loading state', () => {
+<<<<<<< HEAD
             render(<ListingsTab listings={[]} loading={true} error={null} />, { wrapper: BrowserRouter });
             expect(document.querySelector('.skeleton-grid')).toBeInTheDocument();
+=======
+            const { container } = render(<ListingsTab listings={[]} loading={true} error={null} />, { wrapper: BrowserRouter });
+            expect(container.querySelector('.skeleton-grid--cards')).toBeInTheDocument();
+>>>>>>> 96da70c (Resolved bugs in test files)
         });
 
         it('renders error state', () => {

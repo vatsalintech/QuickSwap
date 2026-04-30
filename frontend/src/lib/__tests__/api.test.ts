@@ -39,8 +39,8 @@ describe("getApiUrl / getSSEUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("getApiUrl returns relative path when VITE_API_BASE is empty", () => {
-    expect(getApiUrl("/api/foo")).toBe("/api/foo");
+  it("getApiUrl falls back to localhost in dev when VITE_API_BASE is empty", () => {
+    expect(getApiUrl("/api/foo")).toBe("http://localhost:8082/api/foo");
   });
 
   it("getSSEUrl makes relative API path absolute for EventSource", () => {
