@@ -4,7 +4,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8082" },
+    { "key": "base_url", "value": "https://quickswap-backend.onrender.com" },
     { "key": "token",    "value": "" }
   ],
   "item": [
@@ -313,6 +313,19 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": { "raw": "{{base_url}}/api/add-payment/PAYMENT_ID", "host": ["{{base_url}}"], "path": ["api","add-payment","PAYMENT_ID"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api","health"] }
           }
         }
       ]
