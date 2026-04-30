@@ -34,6 +34,7 @@ describe("isFetchAborted", () => {
 describe("getApiUrl / getSSEUrl", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_API_BASE", "");
+    import.meta.env.DEV = false;
   });
   afterEach(() => {
     vi.unstubAllEnvs();
