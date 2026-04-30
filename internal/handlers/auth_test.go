@@ -49,6 +49,20 @@ func initTestClient(ts *httptest.Server) *auth.Client {
 	return auth.NewClient(ts.URL, "anon")
 }
 
+func TestLoginHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupAuthMockServer()
+	defer ts.Close()
+	c := initTestClient(ts)
+	handler := loginHandler(c)
+
+	req := httptest.NewRequest("GET", "/api/auth/login", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
 func TestLoginHandler(t *testing.T) {
 	ts := setupAuthMockServer()
 	defer ts.Close()
@@ -70,6 +84,36 @@ func TestLoginHandler(t *testing.T) {
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestSignupHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupAuthMockServer()
+	defer ts.Close()
+	c := initTestClient(ts)
+	handler := signupHandler(c)
+
+	req := httptest.NewRequest("GET", "/api/auth/signup", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
+func TestSignupHandler_ShortPassword(t *testing.T) {
+	ts := setupAuthMockServer()
+	defer ts.Close()
+	c := initTestClient(ts)
+	handler := signupHandler(c)
+
+	body := []byte(`{"email": "test@test.com", "password": "abc"}`)
+	req := httptest.NewRequest("POST", "/api/auth/signup", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for short password, got %d", rr.Code)
 	}
 }
 
@@ -103,6 +147,20 @@ func TestSignupHandler(t *testing.T) {
 	}
 }
 
+func TestLogoutHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupAuthMockServer()
+	defer ts.Close()
+	c := initTestClient(ts)
+	handler := logoutHandler(c)
+
+	req := httptest.NewRequest("GET", "/api/auth/logout", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
 func TestLogoutHandler(t *testing.T) {
 	ts := setupAuthMockServer()
 	defer ts.Close()
@@ -123,6 +181,34 @@ func TestLogoutHandler(t *testing.T) {
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestMeHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupAuthMockServer()
+	defer ts.Close()
+	c := initTestClient(ts)
+	handler := meHandler(c)
+
+	req := httptest.NewRequest("POST", "/api/auth/me", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
+func TestMeHandler_NoToken(t *testing.T) {
+	ts := setupAuthMockServer()
+	defer ts.Close()
+	c := initTestClient(ts)
+	handler := meHandler(c)
+
+	req := httptest.NewRequest("GET", "/api/auth/me", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("Expected 401, got %d", rr.Code)
 	}
 }
 
