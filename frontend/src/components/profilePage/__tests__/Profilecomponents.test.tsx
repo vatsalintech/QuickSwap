@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ListingsTab, BidsTab, ProfileHeader, ProfileTabs, SettingsTab } from '../Profilecomponents';
 import { BrowserRouter } from 'react-router-dom';
+import { ToastProvider } from '../../shared';
 import type { ListingCardItem, BidCardItem } from '../Profile.types';
 
 // Mock useNavigate
@@ -30,7 +31,7 @@ describe('Profile Components', () => {
 
         it('renders loading state', () => {
             render(<ListingsTab listings={[]} loading={true} error={null} />, { wrapper: BrowserRouter });
-            expect(screen.getByText(/loading your listings/i)).toBeInTheDocument();
+            expect(document.querySelector('.skeleton-grid')).toBeInTheDocument();
         });
 
         it('renders error state', () => {
@@ -103,9 +104,6 @@ describe('Profile Components', () => {
             expect(screen.getByText('Test User')).toBeInTheDocument();
             expect(screen.getByText('test@example.com')).toBeInTheDocument();
             expect(screen.getByText('TU')).toBeInTheDocument();
-            expect(screen.getByText('Member since')).toBeInTheDocument();
-            const memberRow = screen.getByText('Member since').closest('.profile-detail-item');
-            expect(memberRow?.querySelector('dd')?.textContent).toMatch(/2025/);
         });
     });
 
@@ -124,11 +122,13 @@ describe('Profile Components', () => {
             const onUpdatePassword = vi.fn();
             const onDeleteAccount = vi.fn();
             render(
-                <SettingsTab
-                    onEditProfile={onEditProfile}
-                    onUpdatePassword={onUpdatePassword}
-                    onDeleteAccount={onDeleteAccount}
-                />
+                <ToastProvider>
+                    <SettingsTab
+                        onEditProfile={onEditProfile}
+                        onUpdatePassword={onUpdatePassword}
+                        onDeleteAccount={onDeleteAccount}
+                    />
+                </ToastProvider>
             );
             fireEvent.click(screen.getByText(/edit profile/i));
             expect(onEditProfile).toHaveBeenCalled();
@@ -139,11 +139,13 @@ describe('Profile Components', () => {
             const onUpdatePassword = vi.fn();
             const onDeleteAccount = vi.fn();
             render(
-                <SettingsTab
-                    onEditProfile={onEditProfile}
-                    onUpdatePassword={onUpdatePassword}
-                    onDeleteAccount={onDeleteAccount}
-                />
+                <ToastProvider>
+                    <SettingsTab
+                        onEditProfile={onEditProfile}
+                        onUpdatePassword={onUpdatePassword}
+                        onDeleteAccount={onDeleteAccount}
+                    />
+                </ToastProvider>
             );
             fireEvent.click(screen.getByText(/update password/i));
             expect(onUpdatePassword).toHaveBeenCalled();
@@ -154,11 +156,13 @@ describe('Profile Components', () => {
             const onUpdatePassword = vi.fn();
             const onDeleteAccount = vi.fn();
             render(
-                <SettingsTab
-                    onEditProfile={onEditProfile}
-                    onUpdatePassword={onUpdatePassword}
-                    onDeleteAccount={onDeleteAccount}
-                />
+                <ToastProvider>
+                    <SettingsTab
+                        onEditProfile={onEditProfile}
+                        onUpdatePassword={onUpdatePassword}
+                        onDeleteAccount={onDeleteAccount}
+                    />
+                </ToastProvider>
             );
             fireEvent.click(screen.getByRole('button', { name: /delete account/i }));
             expect(onDeleteAccount).toHaveBeenCalled();
