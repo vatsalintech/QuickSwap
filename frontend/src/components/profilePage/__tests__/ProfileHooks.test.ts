@@ -21,7 +21,6 @@ describe('Shared API and format utilities', () => {
   describe('getApiUrl', () => {
     it('returns path as is if VITE_API_BASE is not set', () => {
       import.meta.env.VITE_API_BASE = '';
-      import.meta.env.DEV = false;
       expect(getApiUrl('/api/test')).toBe('/api/test');
     });
 
