@@ -1,5 +1,6 @@
 describe('Landing Page', () => {
   beforeEach(() => {
+    cy.clearLocalStorage();
     cy.visit('/');
   });
 
@@ -8,12 +9,12 @@ describe('Landing Page', () => {
   });
 
   it('should have a "Start selling" button', () => {
-    cy.get('button').contains('Start selling').should('be.visible');
+    cy.contains('button', 'Start selling').should('be.visible');
   });
 
   it('should navigate to sign in page when clicking "Sign in"', () => {
-    // This assumes the user is not logged in initially
-    cy.get('button').contains('Sign in').click();
+    // Force unauthenticated state so navbar renders Sign in consistently.
+    cy.contains('button', 'Sign in').should('be.visible').click();
     cy.url().should('include', '/signin');
   });
 });

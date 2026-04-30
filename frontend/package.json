@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run:only": "cypress run",
+    "cypress:run": "start-server-and-test dev http://localhost:5173 cypress:run:only"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -41,6 +42,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "jsdom": "^29.0.1",
+    "start-server-and-test": "^3.0.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^8.0.0-beta.13",
