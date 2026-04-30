@@ -2,11 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ListingsTab, BidsTab, ProfileHeader, ProfileTabs, SettingsTab } from '../Profilecomponents';
 import { BrowserRouter } from 'react-router-dom';
-<<<<<<< HEAD
 import { ToastProvider } from '../../shared';
-=======
-import { ToastProvider } from '../../shared/ToastContext';
->>>>>>> 96da70c (Resolved bugs in test files)
 import type { ListingCardItem, BidCardItem } from '../Profile.types';
 
 // Mock useNavigate
