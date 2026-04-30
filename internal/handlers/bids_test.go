@@ -26,6 +26,23 @@ func setupBidsMockServer() *httptest.Server {
 	}))
 }
 
+func TestMyBidsHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupBidsMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := myBidsHandler(c)
+
+	req := httptest.NewRequest("POST", "/api/mybids", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
 func TestMyBidsHandler(t *testing.T) {
 	ts := setupBidsMockServer()
 	defer ts.Close()
@@ -49,6 +66,23 @@ func TestMyBidsHandler(t *testing.T) {
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestTopListingsHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupBidsMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := topListingsHandler(c)
+
+	req := httptest.NewRequest("POST", "/api/toplistings", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
 	}
 }
 
