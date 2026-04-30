@@ -151,6 +151,36 @@ func TestGetProfile(t *testing.T) {
 	}
 }
 
+// ---- Profile Handler ----
+
+func TestProfileHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupProfileMockServer()
+	defer ts.Close()
+	initProfileTestEnv(ts)
+
+	handler := profileHandler(nil)
+	req := httptest.NewRequest("POST", "/api/profile", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
+func TestProfileHandler_NoToken(t *testing.T) {
+	ts := setupProfileMockServer()
+	defer ts.Close()
+	initProfileTestEnv(ts)
+
+	handler := profileHandler(nil)
+	req := httptest.NewRequest("GET", "/api/profile", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("Expected 401, got %d", rr.Code)
+	}
+}
+
 // ---- Update Profile ----
 
 func TestUpdateProfileHandler_WrongMethod(t *testing.T) {
