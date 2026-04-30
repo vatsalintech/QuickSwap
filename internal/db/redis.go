@@ -31,6 +31,7 @@ func NewRedisClient(ctx context.Context) (*redis.Client, error) {
 			Addr: addr,
 		}
 	}
+	opt.Protocol = 2 // Upstash doesn't support RESP3 (go-redis v9 default), force RESP2
 
 	client := redis.NewClient(opt)
 

@@ -61,6 +61,53 @@ func setupListingMockServer() *httptest.Server {
 	}))
 }
 
+func TestMyListingHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupListingMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := myListingHandler(c)
+
+	req := httptest.NewRequest("POST", "/api/mylistings", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
+func TestMyListingHandler_NoListings(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/auth/v1/user":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"id": "user123", "email": "test@example.com"}`))
+		case "/rest/v1/listings":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`[]`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := myListingHandler(c)
+
+	req := httptest.NewRequest("GET", "/api/mylistings", nil)
+	req.Header.Set("Authorization", "Bearer validtoken")
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("Expected 404 for empty listings, got %d", rr.Code)
+	}
+}
+
 func TestMyListingHandler(t *testing.T) {
 	ts := setupListingMockServer()
 	defer ts.Close()
@@ -84,6 +131,90 @@ func TestMyListingHandler(t *testing.T) {
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestCreateListingHandler_MethodNotAllowed(t *testing.T) {
+	ts := setupListingMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := createListingHandler(c, nil)
+
+	req := httptest.NewRequest("GET", "/api/createlisting", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusMethodNotAllowed {
+		t.Errorf("Expected 405, got %d", rr.Code)
+	}
+}
+
+func TestCreateListingHandler_InvalidJSON(t *testing.T) {
+	ts := setupListingMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := createListingHandler(c, nil)
+
+	req := httptest.NewRequest("POST", "/api/createlisting", bytes.NewBuffer([]byte(`not-json`)))
+	req.Header.Set("Authorization", "Bearer validtoken")
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid JSON, got %d", rr.Code)
+	}
+}
+
+func TestCreateListingHandler_InvalidAuctionEndTime(t *testing.T) {
+	ts := setupListingMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := createListingHandler(c, nil)
+
+	body := []byte(`{
+		"title":"Test","description":"desc","category":"Electronics",
+		"images":["img.jpg"],"starting_bid":10,"location":"Chennai",
+		"auction_end_time":"not-a-date"
+	}`)
+	req := httptest.NewRequest("POST", "/api/createlisting", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer validtoken")
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid auction_end_time, got %d", rr.Code)
+	}
+}
+
+func TestCreateListingHandler_InvalidAuctionStartTime(t *testing.T) {
+	ts := setupListingMockServer()
+	defer ts.Close()
+	os.Setenv("SUPABASE_URL", ts.URL)
+	os.Setenv("SUPABASE_ANON_KEY", "anon")
+
+	c := auth.NewClient(ts.URL, "anon")
+	handler := createListingHandler(c, nil)
+
+	body := []byte(`{
+		"title":"Test","description":"desc","category":"Electronics",
+		"images":["img.jpg"],"starting_bid":10,"location":"Chennai",
+		"auction_end_time":"2050-01-01T00:00:00Z",
+		"auction_start_time":"not-a-date"
+	}`)
+	req := httptest.NewRequest("POST", "/api/createlisting", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer validtoken")
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("Expected 400 for invalid auction_start_time, got %d", rr.Code)
 	}
 }
 
