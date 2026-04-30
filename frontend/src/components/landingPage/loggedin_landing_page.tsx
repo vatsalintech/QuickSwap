@@ -234,7 +234,7 @@ const LoggedInLandingPage: React.FC = () => {
       {!isPending && !fetchError && data && (
         <>
           <TopListingsStrip
-            title="Trending now"
+            title=""
             items={trendingItems}
             onShowAll={() => navigate("/explore/trending")}
             onViewItem={(id) => navigate(`/auction/${id}`)}
