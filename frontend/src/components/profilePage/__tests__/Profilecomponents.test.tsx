@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ListingsTab, BidsTab, ProfileHeader, ProfileTabs, SettingsTab } from '../Profilecomponents';
 import { BrowserRouter } from 'react-router-dom';
-import { ToastProvider } from '../../shared/ToastContext';
+import { ToastProvider } from '../../shared';
 import type { ListingCardItem, BidCardItem } from '../Profile.types';
 
 // Mock useNavigate
