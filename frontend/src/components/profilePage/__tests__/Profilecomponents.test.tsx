@@ -2,7 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ListingsTab, BidsTab, ProfileHeader, ProfileTabs, SettingsTab } from '../Profilecomponents';
 import { BrowserRouter } from 'react-router-dom';
+<<<<<<< HEAD
 import { ToastProvider } from '../../shared';
+=======
+import { ToastProvider } from '../../shared/ToastContext';
+>>>>>>> 96da70c (Resolved bugs in test files)
 import type { ListingCardItem, BidCardItem } from '../Profile.types';
 
 // Mock useNavigate
@@ -30,8 +34,13 @@ describe('Profile Components', () => {
         ];
 
         it('renders loading state', () => {
+<<<<<<< HEAD
             render(<ListingsTab listings={[]} loading={true} error={null} />, { wrapper: BrowserRouter });
             expect(document.querySelector('.skeleton-grid')).toBeInTheDocument();
+=======
+            const { container } = render(<ListingsTab listings={[]} loading={true} error={null} />, { wrapper: BrowserRouter });
+            expect(container.querySelector('.skeleton-grid--cards')).toBeInTheDocument();
+>>>>>>> 96da70c (Resolved bugs in test files)
         });
 
         it('renders error state', () => {
